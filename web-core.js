@@ -2,6 +2,7 @@
 (()=>{'use strict';
 const nativeFetch=window.fetch.bind(window),KEY='renta_web_v1',CFG='renta_github_config';
 const DIRTY_KEY='renta_web_unsynced_v1';
+ const syncSignal=(ok,message='')=>window.dispatchEvent(new CustomEvent('renta-github-sync',{detail:{ok,message}}));
  const csv=(s,sep=';')=>s.replace(/^\uFEFF/,'').trim().split(/\r?\n/).map(x=>x.split(sep));
 const nums=x=>{let a=(Array.isArray(x)?x:String(x).split(',')).map(Number).sort((a,b)=>a-b);return a.length===7&&new Set(a).size===7&&a.every(n=>Number.isInteger(n)&&n>=1&&n<=33)?a:null};
 const date=x=>{let s=String(x||'');let m=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);return m?`${m[3]}-${m[2]}-${m[1]}`:s.slice(0,10)};
@@ -36,7 +37,7 @@ let saveTimer=null;
 function scheduleSave(){if(!config())return;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveQueue=saveQueue.then(()=>autoSave()).catch(e=>{console.warn('GitHub synchronizace:',e.message);let el=document.getElementById('renta-sync-warning');if(el)el.textContent='⚠ GitHub: '+e.message;});},900)}
 async function autoSave(){if(!config()||syncing||!dirty)return;syncing=true;try{if(sha===null){let latest=await remote();if(latest){sha=latest.sha;let other=JSON.parse(decode(latest.content));if(JSON.stringify(other.bets)!==JSON.stringify(data.bets)||JSON.stringify(other.predictions)!==JSON.stringify(data.predictions)){throw Error('Společná data se liší: před uložením načti GitHub. Místní data zůstala zachována.')}}}await push();dirty=false;localStorage.removeItem(DIRTY_KEY);}finally{syncing=false}}
 
-async function remote(method='GET',payload){if(!config())throw Error('Nejdříve nastav GitHub přístup.');let path=cfg.path||'renta-data.json',url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,r=await nativeFetch(url,{method,headers:{Authorization:`Bearer ${cfg.token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},...(payload?{body:JSON.stringify(payload)}:{})});let j=await r.json();if(!r.ok){if(r.status===404&&method==='GET')return null;if(r.status===409||r.status===422)throw Error('Konflikt GitHub: data se mezitím změnila. Načti společnou verzi a změnu zopakuj.');throw Error(j.message||`GitHub HTTP ${r.status}`)}return j}
+async function remote(method='GET',payload){if(!config())throw Error('Nejdříve nastav GitHub přístup.');let path=cfg.path||'renta-data.json',url=`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,r=await nativeFetch(url,{method,headers:{Authorization:`Bearer ${cfg.token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},...(payload?{body:JSON.stringify(payload)}:{})});let j=await r.json();if(!r.ok){if(r.status===404&&method==='GET'){syncSignal(false,'GitHub API 404: společný JSON není dostupný.');return null;}if(r.status===409||r.status===422){syncSignal(false,'Konflikt GitHub.');throw Error('Konflikt GitHub: data se mezitím změnila. Načti společnou verzi a změnu zopakuj.');}syncSignal(false,j.message||`GitHub HTTP ${r.status}`);throw Error(j.message||`GitHub HTTP ${r.status}`)}syncSignal(true);return j}
 const decode=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
 const encode=s=>btoa(Array.from(new TextEncoder().encode(s),c=>String.fromCharCode(c)).join(''));
 async function pull(force=false){if(dirty&&!force)throw Error('Místní změny nejsou synchronizované. Nejprve exportuj zálohu JSON nebo zvol bezpečné řešení konfliktu.');let j=await remote();if(!j){sha=null;return false}let d=JSON.parse(decode(j.content));if(!Array.isArray(d.history)||!Array.isArray(d.bets))throw Error('Neplatná struktura sdílených dat');let localHistory=data.history||[];if(dirty&&data.bets.length&&JSON.stringify(data.bets)!==JSON.stringify(d.bets))throw Error('Místní a společné sázky se liší. Automatické načtení zastaveno; nejdřív exportuj zálohu JSON a změny porovnej.');data=d;sha=j.sha;dirty=false;localStorage.removeItem(DIRTY_KEY);localStorage.setItem(KEY,JSON.stringify(data));mergeHistory(localHistory);evaluate(true);localStorage.setItem(KEY,JSON.stringify(data));return true}
@@ -57,5 +58,30 @@ action('gh-disconnect',async()=>{cfg={};sha=null;sessionStorage.removeItem(CFG);
 for(let [id,parser,field] of [['import-history',parseHistory,'history'],['import-bets',parseBets,'bets']])document.getElementById(id).onchange=async e=>{try{let file=e.target.files[0];if(!file)return;let rows=parser(await file.text());if(!confirm(`Nahradit ${field==='history'?'historii losování':'historii sázek'} (${rows.length} záznamů)?`))return;data[field]=rows;persist();location.reload()}catch(err){notice(err.message,'error')}};
 action('export-history',()=>download('renta.csv',formatHistory()));action('export-bets',()=>download('vsazene_kombinace.csv',formatBets()));action('export-predictions',()=>download('renta_predikce.csv',formatPredictions()));action('export-json',()=>download('renta-zaloha.json',JSON.stringify(data,null,2)));document.getElementById('import-json').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());if(!Array.isArray(d.history)||!Array.isArray(d.bets))throw Error('Neplatná záloha');if(confirm('Obnovit zálohu a přepsat místní data?')){data=d;persist();location.reload()}}catch(err){notice(err.message,'error')}};
 }
-document.addEventListener('DOMContentLoaded',async()=>{setup();try{let n=await refreshHistory();if(n){console.info('Doplněno '+n+' nových tahů z renta.csv');if(typeof loadStakedHistory==='function')loadStakedHistory();}}catch(e){console.warn(e.message)}if(config()){try{if(!dirty){let ok=await pull();if(ok){let n=await refreshHistory().catch(()=>0);if(n)scheduleSave();if(typeof loadPredictions==='function')loadPredictions();if(typeof loadStakedHistory==='function')loadStakedHistory();}}}catch(e){console.warn('GitHub:',e.message)}}});
+// Stejný kontrolní interval jako Sportka; při místních změnách nikdy nepřepisovat data.
+ let polling=false;
+ async function periodicSync(){
+  if(polling||syncing||!config()||!navigator.onLine||dirty)return;
+  polling=true;
+  try{
+   let latest=await remote();
+   if(!latest)return;
+   if(latest.sha!==sha){
+    let d=JSON.parse(decode(latest.content));
+    if(!Array.isArray(d.history)||!Array.isArray(d.bets)||!Array.isArray(d.predictions))throw Error('Neplatná struktura společných dat.');
+    if(dirty)return;
+    const oldHistory=data.history;
+    data=d;sha=latest.sha;localStorage.setItem(KEY,JSON.stringify(data));
+    mergeHistory(oldHistory);evaluate(true);localStorage.setItem(KEY,JSON.stringify(data));
+    if(typeof loadPredictions==='function')loadPredictions();
+    if(typeof loadStakedHistory==='function')loadStakedHistory();
+   }
+   syncSignal(true);
+  }catch(e){syncSignal(false,e.message);console.warn('GitHub synchronizace:',e.message)}
+  finally{polling=false}
+ }
+ setInterval(periodicSync,15000);
+ window.addEventListener('online',periodicSync);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)periodicSync()});
+ document.addEventListener('DOMContentLoaded',async()=>{setup();try{let n=await refreshHistory();if(n){console.info('Doplněno '+n+' nových tahů z renta.csv');if(typeof loadStakedHistory==='function')loadStakedHistory();}}catch(e){console.warn(e.message)}if(config()){try{if(!dirty){let ok=await pull();if(ok){let n=await refreshHistory().catch(()=>0);if(n)scheduleSave();if(typeof loadPredictions==='function')loadPredictions();if(typeof loadStakedHistory==='function')loadStakedHistory();}}}catch(e){console.warn('GitHub:',e.message)}}});
 })();

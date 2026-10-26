@@ -1864,7 +1864,17 @@ buttons.forEach(b=>b.addEventListener('click',close));
 document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!actions.contains(e.target))close();const p=document.querySelector('.renta-settings');if(p?.open&&!p.contains(e.target))p.open=false});
 window.addEventListener('resize',()=>{if(!mobile())close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 const badge=document.createElement('div');badge.className='renta-sync-badge';badge.id='rentaSyncBadge';badge.setAttribute('role','status');document.body.append(badge);
-function badgeUpdate(){let cfg={};try{cfg=JSON.parse(sessionStorage.getItem('renta_github_config')||'{}')}catch{}const connected=!!(cfg.owner&&cfg.repo&&cfg.token);const warning=document.getElementById('renta-sync-warning')?.textContent||'';badge.classList.toggle('error',connected&&!!warning);badge.classList.toggle('synced',false);badge.textContent=!connected?'⚠ GitHub: nepřipojeno':warning?'⚠ GitHub: chyba synchronizace':'◷ GitHub: připojeno (stav dat neověřen)'}
+let rentaVerified=false, rentaSyncError='';
+ window.addEventListener('renta-github-sync',e=>{rentaVerified=!!e.detail?.ok;rentaSyncError=e.detail?.message||'';badgeUpdate()});
+ function badgeUpdate(){let cfg={};try{cfg=JSON.parse(localStorage.getItem('renta_github_config')||sessionStorage.getItem('renta_github_config')||'{}')}catch{}
+ const connected=!!(cfg.owner&&cfg.repo&&cfg.token);
+ const warning=document.getElementById('renta-sync-warning')?.textContent||'';
+ const error=connected&&(!!rentaSyncError||!!warning);
+ badge.classList.toggle('error',error);
+ badge.classList.toggle('synced',connected&&rentaVerified&&!error);
+ badge.textContent=!connected?'⚠ GitHub: nepřipojeno':error?'⚠ GitHub: chyba synchronizace':rentaVerified?'✓ GitHub: data synchronizována':'◷ GitHub: připojeno (ověřování dat)';
+ badge.title=error?(rentaSyncError||warning):'';
+ }
 const observer=new MutationObserver(()=>{const p=document.querySelector('.renta-settings');if(p&&!p.querySelector('.renta-side-inner')){const inner=document.createElement('div');inner.className='renta-side-inner';[...p.children].filter(el=>el.tagName!=='SUMMARY').forEach(el=>inner.append(el));p.append(inner);p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{p.open=false;setTimeout(badgeUpdate,0)}));}badgeUpdate()});observer.observe(document.body,{childList:true,subtree:false});document.addEventListener('DOMContentLoaded',()=>{badgeUpdate();const warning=document.getElementById('renta-sync-warning');if(warning)new MutationObserver(badgeUpdate).observe(warning,{childList:true,subtree:true,characterData:true})});badgeUpdate();
 })();
 </script>
