@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Renta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/cs.js"></script>
+
+    <style>
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #0d1e34; /* Sportka: Tmavě modré pozadí */
+            color: #eef2f5;
+            margin: 0;
+            padding: 20px 10px;
+            zoom: 95%; 
+            transition: zoom 0.2s ease-in-out;
+            min-height: 100vh;
+        }
+
+        /* Sekce hlavičky pro vizuální sjednocení */
+        .header-section {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            position: sticky; 
+            top: 0; 
+            background-color: #0d1e34; 
+            z-index: 10; 
+            padding-top: 10px; 
+        }
+
+        .main-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #5ab2ff; /* Sportka: Modrý nadpis */
+            text-align: center;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .controls-row {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .top-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            /* Změna pro zobrazení labelu nad inputem */
+        }
+        
+        .input-label {
+            font-size: 0.8em;
+            font-weight: 500;
+            color: #eef2f5;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #334e6e; 
+            background-color: #13213a; 
+            color: white;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-align: center;
+            width: 120px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 700; /* BOLD pro tlačítka */
+            transition: all 0.2s ease-in-out;
+            color: white;
+            white-space: nowrap;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Sportka stín */
+        }
+        
+        /* Sportka barevné třídy pro tlačítka */
+        .green { background-color: #4CAF50; }
+        .green:hover { background-color: #45a049; }
+        .blue { background-color: #3f51b5; }
+        .blue:hover { background-color: #3949ab; }
+        .red { background-color: #d32f2f; }
+        .red:hover { background-color: #c02a2a; }
+
+        /* OPAKOVANĚ KONTROLOVÁNO CENTROVÁNÍ HLÁŠEK: */
+        /* Převzato z Sportka: .toast-message */
+        .toast-message {
+            position: fixed;
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%); 
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            z-index: 10000; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.5s; 
+            max-width: 90%;
+            min-width: 250px; 
+            text-align: center;
+        }
+
+        /* KLÍČOVÉ: Sjednocení tříd pro zobrazení z Renta (.visible) na Sportka (.show) */
+        .toast-message.show, .toast-message.visible { 
+            opacity: 1;
+            display: block; /* Zajištění viditelnosti pro Renta JS */
+        }
+        
+        .toast-message.success { background-color: #4CAF50; color: #1a2a43; }
+        .toast-message.error { background-color: #d32f2f; }
+        .toast-message.info { background-color: #2196F3; }
+        .toast-message.warning { background-color: #ffed4a; color: #1a2a43; }
+
+        /* --- STYLY PRO POTVRZOVACÍ DIALOG (Modal) --- */
+        /* Změna z .modal-overlay na .dialog-overlay pro vizuální sjednocení se Sportka */
+        .dialog-overlay, .modal-overlay { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7); 
+            z-index: 11000;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+
+        /* KLÍČOVÉ: Sjednocení tříd pro zobrazení z Renta (.visible) na Sportka (.visible) */
+        .dialog-overlay.visible, .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            display: flex; 
+        }
+
+        /* Změna z .modal-content na .confirmation-dialog pro vizuální sjednocení se Sportka */
+        .confirmation-dialog, .modal-content { 
+            background-color: #1a2a43; 
+            color: #eef2f5;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        
+        .dialog-overlay.visible .confirmation-dialog, 
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .dialog-message {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            color: #8bb7f0; 
+        }
+
+        .dialog-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .dialog-buttons button {
+            padding: 10px 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            min-width: 100px;
+        }
+        
+        .confirm-btn, .confirm-button {
+            background-color: #d32f2f; /* Červená pro Smazat */
+        }
+        
+        .cancel-btn, .cancel-button {
+            background-color: #334e6e; /* Tmavá barva pro Zrušit */
+        }
+        /* --- KONEC STYLŮ DIALOGU --- */
+
+        .content-sections {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section {
+            background-color: #1a2a43; 
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid #334e6e;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px; 
+        }
+        
+        .section-title {
+            color: #8bb7f0; 
+            font-size: 1.4em;
+            font-weight: 500;
+        }
+
+        .size-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .size-button {
+            background-color: #334e6e;
+            border: none;
+            color: #eef2f5;
+            font-size: 1.2em;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+            box-shadow: none; /* Potlačení button stínu */
+        }
+        
+        .size-button:hover {
+            background-color: #4a668a;
+        }
+        
+        /* KLÍČOVÉ: ZACHOVÁNÍ RENTA TŘÍD PRO JS */
+        .lottery-blocks-container {
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 20px; 
+            max-width: 1200px;
+        }
+
+        .lottery-block {
+            background-color: #13213a; /* Sportka inner column background */
+            border: 1px solid #334e6e;
+            border-radius: 8px;
+            padding: 15px; /* Menší padding pro Renta bloky */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+            flex-basis: 230px;
+            min-width: 230px;
+            /* box-shadow: 0 4px 10px rgba(0,0,0,0.3); */ /* Odstraněno */
+            transition: transform 0.2s;
+            align-items: center;
+        }
+        
+        .lottery-block:hover {
+             transform: none; /* Zrušení Renta hoveru */
+        }
+        
+        .lottery-title {
+            font-weight: bold;
+            color: #8bb7f0;
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 190px;
+            margin-top: 5px;
+        }
+        
+        .number-box {
+            width: 25px;
+            height: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-color: #2a3e59; /* Sportka default ball color */
+            color: #eef2f5;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+            flex-shrink: 0;
+        }
+        
+        .number-box.highlight {
+            background-color: #5ab2ff; /* Sportka highlight color */
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* --- NOVÝ VZHLED PRO ODKAZ --- */
+        .summary-link {
+            color: #5ab2ff; /* Modrý text */
+            font-size: 0.9em;
+            font-weight: 700; /* BOLD, aby se shodoval s tlačítky */
+            text-decoration: none; /* Odstranění podtržení */
+            transition: color 0.2s ease-in-out;
+            padding: 5px 8px; 
+            border-radius: 4px;
+            white-space: nowrap;
+            /* Zajištění, že se zarovná s ostatními elementy a bude se chovat jako inline-flex */
+            display: inline-flex; 
+            align-items: center;
+        }
+
+        .summary-link:hover {
+            color: #8bb7f0; /* Světlejší modrá při najetí (jemný hover) */
+            text-decoration: none; 
+            background-color: transparent; /* Bez pozadí */
+        }
+
+        /* --- HISTORIE --- */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px; 
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334e6e; /* Oddělovač */
+        }
+        
+        .history-title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px; 
+        }
+        
+        .undo-redo-buttons button {
+            background: none;
+            border: none;
+            color: #8bb7f0;
+            font-size: 1em; 
+            padding: 5px 8px; 
+            cursor: pointer;
+            transition: color 0.2s, background-color 0.2s;
+            line-height: 1.2;
+            align-items: center;
+            gap: 4px;
+            border-radius: 4px;
+            box-shadow: none;
+            font-weight: 700; /* Přidáno pro BOLD text (shoda s odkazem) */
+        }
+        
+        .undo-redo-buttons button:hover {
+            color: #5ab2ff;
+        }
+
+        .undo-redo-buttons button:disabled {
+            color: #556a87; 
+            cursor: not-allowed;
+            opacity: 0.6; 
+        }
+        
+        /* Převzato z Renta kopie - bubliny */
+        .combination-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px; 
+            align-items: center;
+        }
+
+        .history-number-bubble {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 25px; 
+            height: 25px;
+            border-radius: 50%;
+            background-color: #5ab2ff; /* Sportka highlight color */
+            color: #1a2a43; /* Tmavá barva textu pro kontrast */
+            font-weight: bold;
+            font-size: 0.8em; 
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        /* --- KONEC HISTORIE --- */
+
+        /* Kontejner tabulky a scrollbar (Sportka styl) */
+        .table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #334e6e;
+        }
+        
+        /* KLÍČOVÉ: Renta třída namapována na Sportka styly scrollbaru */
+        .history-scroll-container {
+            /* Potlačení původních stylů, aby fungoval .table-container */
+            max-height: none !important;
+            overflow-y: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #1a2a43;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #334e6e;
+            border-radius: 4px;
+            border: 2px solid #1a2a43;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #334e6e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        th {
+            background-color: #13213a;
+            color: #8bb7f0;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Skrytí 3. sloupce (Cena) */
+        #staked-history-table th:nth-child(3),
+        #staked-history-table td:nth-child(3) {
+            display: none;
+        }
+
+        .delete-button {
+            background: none;
+            border: none;
+            color: #d32f2f; 
+            cursor: pointer;
+            padding: 5px 8px; 
+            line-height: 1;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            box-shadow: none; 
+        }
+        .delete-button:hover {
+            color: #ff5252;
+        }
+        
+        /* CSS pro blikání tlačítka */
+        @keyframes blinker { 
+            50% { opacity: 0.4; } 
+        } 
+        .blinking-button { 
+            animation: blinker 1s linear infinite; 
+        } 
+
+        .date-input-confirmed {
+            border: 2px solid #4CAF50 !important; 
+        }
+        .date-input-error {
+            border: 2px solid #d32f2f !important; 
+        }
+
+        @media (max-width: 768px) {
+            .history-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+    
+        .renta-settings {padding:12px 16px !important;}
+        .renta-settings[open] {padding:20px !important;}
+        .renta-settings summary {list-style:none;}
+        .renta-settings summary::-webkit-details-marker {display:none;}
+        .renta-settings input[type=file] {max-width:160px;}
+        @media(max-width:600px){
+          body{padding:10px 6px;zoom:100%;}
+          .header-section,.content-sections{width:100%;max-width:100%;}
+          .main-title{font-size:1.65em;}
+          .section{padding:12px;}
+          .lottery-blocks-container{gap:12px;}
+          .lottery-block{min-width:0;width:min(100%,270px);flex-basis:270px;box-sizing:border-box;}
+          .top-inputs{gap:8px;}
+          .top-inputs button{font-size:.8em;padding:10px;}
+          .renta-settings{margin:0;}
+          .renta-settings[open] input{max-width:100%;box-sizing:border-box;}
+          .section-title{font-size:1.1em;}
+        }
+
+        /* Mobil: historie jako přehledné karty bez vodorovného posouvání. */
+        @media (max-width: 600px) {
+          #history-section-container { padding: 14px 10px; }
+          #history-section-container .history-header { gap: 10px; margin-bottom: 12px; }
+          #history-section-container .history-title-group { display:flex; flex-wrap:wrap; gap:5px 10px; width:100%; }
+          #history-section-container .section-title { font-size:1.08em; }
+          #history-section-container .undo-redo-buttons { display:flex; gap:4px; }
+          #history-section-container .undo-redo-buttons button { font-size:.79em; padding:5px; }
+          #run-kontrola-link { font-size:.85em; padding:3px 0; white-space:normal; }
+          #history-section-container .table-container { max-height: 520px; overflow-y:auto; overflow-x:hidden; border:0; }
+          #staked-history-table { display:block !important; width:100%; }
+          #staked-history-table thead { display:none; }
+          #staked-history-table tbody { display:flex; flex-direction:column; gap:10px; }
+          #staked-history-table tbody tr { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; background:#13213a; border:1px solid #334e6e; border-radius:10px; padding:12px; }
+          #staked-history-table tbody td { display:block; min-width:0; padding:0; border:0; white-space:normal; overflow:visible; text-overflow:clip; text-align:left; }
+          #staked-history-table tbody td:nth-child(1) { grid-column:1; font-weight:700; color:#8bb7f0; font-size:.9em; }
+          #staked-history-table tbody td:nth-child(2) { grid-column:1 / -1; grid-row:2; }
+          #staked-history-table tbody td:nth-child(2)::before { content:'Kombinace'; display:block; color:#8bb7f0; font-size:.75em; margin-bottom:7px; }
+          #staked-history-table tbody td:nth-child(4) { grid-column:1; grid-row:3; font-size:.83em; }
+          #staked-history-table tbody td:nth-child(4)::before { content:'Výsledek: '; color:#8bb7f0; }
+          #staked-history-table tbody td:nth-child(5) { grid-column:1; grid-row:4; font-size:.83em; }
+          #staked-history-table tbody td:nth-child(5)::before { content:'Shoda: '; color:#8bb7f0; }
+          #staked-history-table tbody td:nth-child(5):empty { display:none; }
+          #staked-history-table tbody td:nth-child(6) { grid-column:2; grid-row:1; justify-self:end; }
+          #staked-history-table tbody td:nth-child(6):empty { display:none; }
+          #staked-history-table .combination-display { gap:5px; }
+          #staked-history-table .history-number-bubble { width:29px; height:29px; font-size:.83em; }
+          #staked-history-table .delete-button { font-size:.78em; padding:2px 3px; }
+        }
+
+        /* v5: úsporné mobilní ovládání pod sebou; desktop beze změny */
+        @media (max-width: 600px) {
+          .header-section { position:relative; top:auto; padding-top:8px; gap:10px; margin-bottom:12px; }
+          .header-section .main-title { font-size:1.55em; line-height:1.2; }
+          .header-section .controls-row { width:100%; }
+          .header-section .top-inputs { display:flex; flex-direction:column; align-items:center; gap:7px; width:100%; }
+          .header-section .top-inputs .input-group:not([style*="display: none"]) { width:min(100%,240px); gap:4px; }
+          .header-section #staked-date { width:100%; max-width:240px; box-sizing:border-box; padding:8px 10px; font-size:.83em; }
+          .header-section .top-inputs > button { display:block; width:min(100%,240px); min-height:36px; padding:8px 10px; font-size:.78em; line-height:1.25; white-space:normal; margin:0; }
+        }
+
+        /* v6: kontrastní kalendář Flatpickr – losovací pondělí a čtvrtky. */
+        .flatpickr-calendar { background:#1a2a43 !important; border:1px solid #52749e !important; color:#eef2f5 !important; box-shadow:0 14px 35px rgba(0,0,0,.55) !important; font-family:Montserrat,Arial,sans-serif; }
+        .flatpickr-calendar.arrowTop:before {border-bottom-color:#52749e !important;}
+        .flatpickr-calendar.arrowTop:after {border-bottom-color:#1a2a43 !important;}
+        .flatpickr-months,.flatpickr-weekdays,.flatpickr-innerContainer,.flatpickr-rContainer {background:#1a2a43 !important;}
+        .flatpickr-current-month,.flatpickr-current-month .cur-month,.flatpickr-current-month input.cur-year,.flatpickr-weekday {color:#eef2f5 !important; fill:#eef2f5 !important;}
+        .flatpickr-months .flatpickr-prev-month,.flatpickr-months .flatpickr-next-month {color:#b9d8ff !important; fill:#b9d8ff !important;}
+        .flatpickr-months .flatpickr-prev-month svg,.flatpickr-months .flatpickr-next-month svg {fill:#b9d8ff !important;}
+        .flatpickr-current-month .flatpickr-monthDropdown-months {background:#1a2a43 !important;color:#eef2f5 !important;}
+        .flatpickr-day {color:#b8c8df !important;border:1px solid transparent !important; font-weight:600; opacity:1 !important;}
+        .flatpickr-day.prevMonthDay,.flatpickr-day.nextMonthDay {color:#7589a5 !important;}
+        .flatpickr-day.non-selectable-day {color:#8c9cb2 !important; background:#24334a !important; opacity:1 !important; cursor:not-allowed !important;}
+        .flatpickr-day.draw-day:not(.non-selectable-day) {background:#205b49 !important; color:#d9ffea !important; border-color:#388e70 !important; cursor:pointer !important;}
+        .flatpickr-day.draw-day:not(.non-selectable-day):hover {background:#318363 !important; color:#fff !important;}
+        .flatpickr-day.today {border:2px solid #f3bd5a !important;}
+        .flatpickr-day.selected,.flatpickr-day.selected.draw-day {background:#5ab2ff !important; border-color:#5ab2ff !important; color:#09182d !important; font-weight:800 !important;}
+        .flatpickr-day.selected:hover {background:#83c8ff !important;}
+        .flatpickr-calendar .renta-cal-legend {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px 12px;padding:10px 7px;border-top:1px solid #405675;color:#dbe9ff;font-size:10px;}
+        .renta-cal-legend span {display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+        .renta-cal-legend i {display:inline-block;width:11px;height:11px;border-radius:3px;background:#24334a;border:1px solid #8397ae;}
+        .renta-cal-legend .draw i {background:#205b49;border-color:#388e70;}
+        .renta-cal-legend .selected-day i {background:#5ab2ff;border-color:#5ab2ff;}
+        @media(max-width:600px) { .flatpickr-calendar {max-width:calc(100vw - 20px) !important;} .flatpickr-day {font-size:13px;} }
+        /* v7: vycentrování otevřeného kalendáře na mobilu bez zásahu do desktopu. */
+        @media (max-width:600px) {
+          .flatpickr-calendar.renta-mobile-centered.open {
+            position:fixed !important;
+            left:50% !important;
+            right:auto !important;
+            top:50% !important;
+            transform:translate(-50%,-50%) !important;
+            margin:0 !important;
+            z-index:12000 !important;
+          }
+          .flatpickr-calendar.renta-mobile-centered.arrowTop:before,
+          .flatpickr-calendar.renta-mobile-centered.arrowTop:after,
+          .flatpickr-calendar.renta-mobile-centered.arrowBottom:before,
+          .flatpickr-calendar.renta-mobile-centered.arrowBottom:after {display:none !important;}
+        }
+    
+/* RENTA – vzhled podle finální Sportky; výpočetní kód beze změn. */
+html{color-scheme:dark}*{box-sizing:border-box}
+body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:block!important;background:#131e33!important;color:#eef2f5!important;font:15px Montserrat,Arial,sans-serif!important}
+.header-section,.content-sections{width:100%!important;max-width:1100px!important;margin-left:auto!important;margin-right:auto!important}
+.header-section{position:static!important;background:transparent!important;padding:0!important;gap:0!important;margin-bottom:10px!important}
+.main-title{font-size:28px!important;color:#5ab2ff!important;margin:8px 0 12px!important}
+.controls-row{gap:0!important}.top-inputs{display:flex!important;align-items:flex-end!important;justify-content:center!important;gap:10px!important}
+.input-group{gap:4px!important}.input-label{font-size:11px!important;font-weight:500!important}
+#staked-date{width:145px!important;height:36px!important;min-width:145px!important;padding:6px!important;font-size:12px!important}
+.top-inputs>button{height:44px!important;padding:10px 13px!important;border-radius:8px!important;font-size:12px!important;box-shadow:none!important}
+.content-sections{gap:0!important}.content-sections>.section:not(.renta-settings){background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:10px 0!important}
+.section-header{margin-bottom:12px!important}.section-title{font-size:17px!important;color:#8bb7f0!important}
+.lottery-blocks-container{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;justify-items:stretch!important}
+.lottery-block{width:100%!important;min-width:0!important;max-width:none!important;flex:none!important;margin:0!important;padding:14px 8px!important;background:#13213a!important;border:1px solid #334e6e!important;border-radius:7px!important;box-shadow:none!important}
+.lottery-title{font-size:16px!important;color:#8bb7f0!important;margin:0 0 16px!important;text-align:center!important}
+.numbers-grid{display:grid!important;grid-template-columns:repeat(7,25px)!important;gap:4px!important;justify-content:center!important}
+.number-box{width:25px!important;height:25px!important;min-width:0!important;min-height:0!important;padding:0!important;border-radius:50%!important;background:#2a3e59!important;color:#eef2f5!important;font-size:11px!important;display:grid!important;place-items:center!important;box-shadow:none!important}
+.number-box.highlight{background:#5ab2ff!important;color:#14243b!important}
+.size-controls{gap:5px!important}.size-button{background:#334a70!important;color:#e7f0ff!important}
+.history-header{display:flex!important;align-items:center!important;justify-content:flex-start!important;border-bottom:1px solid #354866!important;padding:0 0 13px!important;margin-bottom:14px!important}
+.history-title-group{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:wrap!important}
+.undo-redo-buttons button{background:transparent!important;border:0!important;box-shadow:none!important;color:#8bb7f0!important;font-size:12px!important;padding:4px 6px!important}
+.table-container{height:260px!important;max-height:260px!important;overflow:auto!important;border:1px solid #354866!important;border-radius:7px!important;scrollbar-width:thin;scrollbar-color:#60718e #1a2942}
+#staked-history-table{width:100%!important;border-collapse:collapse!important;font-size:12px!important}
+#staked-history-table th{background:#19263e!important;color:#a8c7f4!important;text-align:center!important;font-size:11px!important;position:sticky!important;top:0!important;z-index:2!important}
+#staked-history-table td{text-align:center!important;background:#202d45!important;border-bottom:1px solid #354866!important;padding:7px 8px!important}
+#staked-history-table .combination-display{display:flex!important;justify-content:center!important;gap:4px!important;flex-wrap:nowrap!important}
+#staked-history-table .history-number-bubble{width:23px!important;height:23px!important;min-width:23px!important;border-radius:50%!important;background:#76b4ff!important;color:#10223b!important;font-size:11px!important;display:grid!important;place-items:center!important;padding:0!important}
+.renta-settings{position:fixed!important;left:0!important;top:50%!important;bottom:auto!important;width:340px!important;height:min(74dvh,640px)!important;max-height:min(74dvh,640px)!important;z-index:2100!important;overflow:visible!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;transform:translate(calc(-100% + 36px),-50%)!important;transition:transform .25s ease!important}
+.renta-settings[open]{transform:translate(0,-50%)!important}
+.renta-settings>summary{position:absolute!important;left:calc(100% - 36px)!important;top:0!important;width:36px!important;height:245px!important;display:flex!important;align-items:center!important;justify-content:center!important;writing-mode:vertical-rl!important;font-size:11px!important;color:#b8d6ff!important;background:#293b59!important;border:1px solid #425b7e!important;border-radius:0 10px 10px 0!important;padding:12px 7px!important;list-style:none!important;cursor:pointer!important}
+.renta-settings>summary::-webkit-details-marker{display:none}
+.renta-side-inner{width:calc(100% - 36px)!important;height:100%!important;overflow-y:auto!important;background:#1a2a43!important;border:1px solid #425b7e!important;border-radius:0 0 10px 0!important;padding:16px!important}
+.renta-side-inner>div{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:9px!important}
+.renta-side-inner input,.renta-side-inner button{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+.renta-side-inner label{width:100%!important;font-size:12px!important}
+.renta-side-inner input[type=file]{font-size:11px!important}
+.renta-mobile-menu{display:none!important}.renta-mobile-actions{display:contents}
+.renta-sync-badge{position:fixed;left:12px;bottom:12px;z-index:1900;border:1px solid #3a4c68;background:#1b2942;border-radius:6px;padding:7px 10px;font-size:11px;color:#ffd27b;box-shadow:0 2px 8px #0004}
+.renta-sync-badge.synced{color:#91e3ae}.renta-sync-badge.error{color:#ff9999}
+@media(max-width:700px){body{padding:10px 7px!important}.header-section,.content-sections{max-width:340px!important}.main-title{font-size:27px!important;margin:7px 0 20px!important}.top-inputs{position:relative!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:13px!important;flex-wrap:nowrap!important;margin-bottom:12px!important}.input-group{flex:none!important}.input-label{font-size:12px!important}#staked-date{width:150px!important;min-width:150px!important;height:38px!important;font-size:13px!important}.renta-mobile-menu{display:flex!important;align-items:center!important;gap:7px!important;flex:none!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#eef2f5!important;font-size:13px!important;padding:5px 0!important;cursor:pointer!important}.renta-mobile-menu span{font-size:23px}.renta-mobile-actions{display:none!important;position:absolute!important;z-index:1500!important;top:calc(100% + 2px)!important;left:50%!important;transform:translateX(-50%)!important;width:min(288px,calc(100vw - 34px))!important;padding:14px 25px!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;background:#16243b!important;border:1px solid #3b5275!important;border-radius:10px!important;box-shadow:0 10px 25px #0008!important}.renta-mobile-actions.expanded{display:flex!important}.renta-mobile-actions button{width:100%!important;min-height:36px!important;height:auto!important;padding:10px 7px!important;font-size:12px!important}.lottery-blocks-container{grid-template-columns:1fr!important;gap:12px!important}.lottery-block{padding:14px 7px!important}.lottery-title{font-size:18px!important;margin-bottom:20px!important}.numbers-grid{grid-template-columns:repeat(7,minmax(0,25px))!important;gap:3px!important}.number-box{width:100%!important;height:auto!important;aspect-ratio:1!important}.section-title{font-size:15px!important}.renta-settings{width:270px!important;transform:translate(calc(-100% + 22px),-50%)!important}.renta-settings[open]{transform:translate(0,-50%)!important}.renta-settings>summary{left:calc(100% - 22px)!important;width:22px!important;height:220px!important;font-size:0!important;padding:5px!important}.renta-settings>summary::before{content:' ';width:3px;height:30px;background:#8bb7f0;border-radius:4px}.renta-side-inner{width:calc(100% - 22px)!important}.table-container{height:530px!important;max-height:530px!important;overflow-x:hidden!important;border:0!important;background:transparent!important}#staked-history-table,#staked-history-table tbody{display:block!important;width:100%!important;min-width:0!important}#staked-history-table thead{display:none!important}#staked-history-table tbody tr{display:flex!important;flex-wrap:wrap!important;position:relative!important;gap:6px 8px!important;background:#17253e!important;border:1px solid #354866!important;border-radius:10px!important;padding:12px!important;margin-bottom:10px!important}#staked-history-table tbody td{display:block!important;background:transparent!important;border:0!important;padding:0!important;height:auto!important;text-align:left!important;font-size:12px!important;white-space:normal!important}#staked-history-table tbody td:nth-child(1){width:100%!important;color:#8bb7f0!important;font-weight:600!important;padding-right:80px!important}#staked-history-table tbody td:nth-child(2){width:100%!important;order:2!important}#staked-history-table tbody td:nth-child(2)::before{content:'Kombinace';display:block;color:#8bb7f0;font-size:11px;margin:4px 0}#staked-history-table tbody td:nth-child(3){display:none!important}#staked-history-table tbody td:nth-child(4){width:100%!important;order:3!important}#staked-history-table tbody td:nth-child(4)::before{content:'Výsledek: ';color:#8bb7f0}#staked-history-table tbody td:nth-child(5){order:4!important}#staked-history-table tbody td:nth-child(5)::before{content:'Shoda: ';color:#8bb7f0}#staked-history-table tbody td:nth-child(6){position:absolute!important;right:8px!important;top:7px!important}#staked-history-table .combination-display{justify-content:flex-start!important;flex-wrap:wrap!important}#staked-history-table .history-number-bubble{width:24px!important;height:24px!important;min-width:24px!important}.renta-sync-badge{left:12px;bottom:12px}}
+@media(prefers-reduced-motion:reduce){.renta-settings{transition:none!important}}
+
+
+/* 2026-10-26: geometrie bočního panelu a mobilní ovládání. */
+.renta-settings{box-sizing:border-box!important;}
+.renta-settings>.renta-side-inner{box-sizing:border-box!important;margin:0!important;}
+.renta-settings>summary{
+  box-sizing:border-box!important;
+  left:calc(100% - 36px)!important;
+  top:0!important;
+  margin:0!important;
+  transform:none!important;
+  align-self:auto!important;
+  position:absolute!important;
+  z-index:2!important;
+}
+/* +/- pouze na PC; na tabletu a mobilu nejsou potřeba. */
+@media(max-width:1020px){.size-controls{display:none!important}}
+@media(max-width:700px){
+  .top-inputs{gap:7px!important;align-items:center!important;}
+  .renta-mobile-menu{align-self:center!important;margin:18px 0 0!important;line-height:1!important;gap:5px!important;}
+  .renta-mobile-menu span{line-height:1!important;}
+  .renta-settings>summary{left:calc(100% - 22px)!important;top:0!important;margin:0!important;}
+}
+
+/* Oprava 2026-10-26: ouško je bez mezery spojeno s pravým okrajem panelu. */
+.renta-settings{
+  display:block!important;
+  box-sizing:border-box!important;
+  width:340px!important;
+  padding:0!important;
+  border:0!important;
+  overflow:visible!important;
+  isolation:isolate!important;
+}
+.renta-settings>.renta-side-inner{
+  position:absolute!important;top:0!important;left:0!important;
+  width:calc(100% - 36px)!important;height:100%!important;
+  margin:0!important;border-radius:0 0 10px 0!important;
+}
+.renta-settings>summary{
+  position:absolute!important;top:0!important;right:0!important;left:auto!important;
+  width:36px!important;height:245px!important;
+  margin:0!important;padding:12px 7px!important;
+  transform:none!important;border-left:0!important;
+  border-radius:0 10px 10px 0!important;
+  background:#293b59!important;box-shadow:none!important;
+  z-index:5!important;
+}
+.renta-settings>summary::after{content:none!important;display:none!important}
+@media(max-width:700px){
+  /* Datum a hamburger tvoří jednu kompaktní vodorovnou skupinu. */
+  .header-section{gap:0!important;margin-bottom:2px!important}
+  .main-title{margin:4px 0 7px!important;line-height:1.12!important}
+  .controls-row{margin:0!important;padding:0!important}
+  .header-section .top-inputs{
+    width:max-content!important;max-width:100%!important;
+    margin:0 auto 6px!important;padding:0!important;
+    display:flex!important;flex-direction:row!important;
+    justify-content:center!important;align-items:flex-end!important;
+    flex-wrap:nowrap!important;gap:9px!important;
+  }
+  .header-section .top-inputs .input-group{
+    flex:0 0 auto!important;width:150px!important;max-width:150px!important;
+    margin:0!important;gap:4px!important;
+  }
+  .header-section #staked-date{width:150px!important;min-width:150px!important;max-width:150px!important;height:38px!important;margin:0!important}
+  .header-section .renta-mobile-menu{
+    display:flex!important;flex:0 0 auto!important;align-self:flex-end!important;
+    align-items:center!important;justify-content:center!important;
+    width:auto!important;min-width:0!important;height:38px!important;
+    margin:0!important;padding:0 2px!important;gap:5px!important;
+    font-size:13px!important;line-height:1!important;
+  }
+  .header-section .renta-mobile-menu span{font-size:23px!important;line-height:1!important}
+  .renta-settings{width:270px!important}
+  .renta-settings>.renta-side-inner{width:calc(100% - 22px)!important}
+  .renta-settings>summary{right:0!important;left:auto!important;width:22px!important;height:220px!important;padding:5px!important}
+}
+
+/* 2026-10-26: pevná poloha ouška při otevření i zavření; panel podle obsahu. */
+.renta-settings,
+.renta-settings[open] {
+  top:clamp(12px, 24vh, 270px)!important;
+  bottom:auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+  transform:translateX(calc(-100% + 36px))!important;
+}
+.renta-settings[open]{transform:translateX(0)!important;}
+.renta-settings>.renta-side-inner {
+  position:relative!important;
+  top:auto!important;
+  left:0!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  padding:16px!important;
+}
+.renta-settings>summary {
+  top:0!important;
+  bottom:auto!important;
+  right:0!important;
+  left:auto!important;
+  margin:0!important;
+  transform:none!important;
+}
+@media(max-width:700px){
+  .renta-settings,.renta-settings[open]{
+    top:12px!important;
+    transform:translateX(calc(-100% + 22px))!important;
+  }
+  .renta-settings[open]{transform:translateX(0)!important;}
+  .renta-settings>.renta-side-inner{padding:12px!important;}
+  /* Mobil: hlášky dole u spodního okraje, nikoliv nad kombinacemi. */
+  #statusMessage.toast-message {
+    position:fixed!important;
+    top:auto!important;
+    bottom:64px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:max-content!important;
+    max-width:calc(100vw - 38px)!important;
+    min-width:0!important;
+    padding:12px 16px!important;
+    font-size:13px!important;
+    line-height:1.3!important;
+    z-index:10000!important;
+    pointer-events:none!important;
+  }
+}
+
+/* 2026-10-26: poslední úpravy dle snímků – pouze rozvržení. */
+@media (max-width:700px) {
+  /* Stejná výška panelu i ouška jako na PC/tabletu, otevření ji nemění. */
+  .renta-settings, .renta-settings[open] {
+    top:clamp(150px,24vh,270px)!important;
+    bottom:auto!important;
+  }
+  .renta-settings>summary {top:0!important;}
+  /* Kompaktnější rámečky kombinací, čísla zůstávají stejně velká. */
+  .lottery-blocks-container {
+    width:100%!important;
+    justify-items:center!important;
+  }
+  .lottery-block {
+    width:min(100%,270px)!important;
+    max-width:270px!important;
+    margin-inline:auto!important;
+  }
+  /* Hláška dole, užší a s automatickým zalomením textu. */
+  #statusMessage.toast-message {
+    width:min(280px,calc(100vw - 60px))!important;
+    max-width:min(280px,calc(100vw - 60px))!important;
+    min-width:0!important;
+    padding:10px 12px!important;
+    white-space:normal!important;
+    overflow-wrap:break-word!important;
+    font-size:12px!important;
+  }
+}
+
+/* 2026-10-26: pouze užší rámečky kombinací na PC a tabletu. */
+@media (min-width:701px){
+  .lottery-blocks-container{grid-template-columns:repeat(2,minmax(0,320px))!important;justify-content:center!important;}
+}
+
+/* Zarovnání historie s vnějšími okraji obou sloupců kombinací na PC/tabletu.
+   2 × 320 px + mezera 12 px = 652 px. Mobil zůstává beze změny. */
+@media (min-width:701px) {
+  #history-section-container {
+    width:652px!important;
+    max-width:100%!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  #history-section-container .history-header,
+  #history-section-container .table-container {
+    width:100%!important;
+  }
+}
+
+/* Přesné zarovnání nadpisu predikce a tlačítek s rámečky. */
+@media (min-width:701px) {
+  .content-sections>.section:first-of-type .section-header {
+    position:relative!important;
+    width:652px!important;
+    max-width:100%!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    justify-content:center!important;
+    min-height:32px!important;
+  }
+  .content-sections>.section:first-of-type .section-header .section-title {
+    text-align:center!important;
+    width:100%!important;
+  }
+  .content-sections>.section:first-of-type .section-header .size-controls {
+    position:absolute!important;
+    right:0!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+  }
+}
+@media (max-width:700px) {
+  .content-sections>.section:first-of-type .section-header {
+    justify-content:center!important;
+  }
+  .content-sections>.section:first-of-type .section-header .section-title {
+    text-align:center!important;
+    width:100%!important;
+  }
+}
+/* Finální zarovnání horního řádku přesně na hrany kombinací. */
+@media (min-width:701px) {
+  .content-sections > .section:first-of-type .section-header {
+    width:652px!important;
+    max-width:100%!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+  }
+  .content-sections > .section:first-of-type .section-header .section-title {
+    flex:1 1 auto!important;
+    width:auto!important;
+    text-align:left!important;
+    margin:0!important;
+  }
+  .content-sections > .section:first-of-type .section-header .size-controls {
+    position:static!important;
+    transform:none!important;
+    margin-left:auto!important;
+    flex:0 0 auto!important;
+  }
+}
+@media (max-width:700px) {
+  .content-sections > .section:first-of-type .section-header {
+    display:flex!important;
+    justify-content:center!important;
+    align-items:center!important;
+  }
+  .content-sections > .section:first-of-type .section-header .section-title {
+    width:100%!important;
+    text-align:center!important;
+    margin:0!important;
+  }
+}
+
+/* Zarovnání podle hran rámečků: selektor míří přímo na záhlaví predikcí.
+   Původní :first-of-type nefungovalo kvůli předcházející div.toast-message. */
+@media (min-width:701px) {
+  .content-sections > .section > .section-header:has(+ #prediction-container) {
+    box-sizing:border-box!important;
+    width:652px!important;
+    max-width:100%!important;
+    margin-inline:auto!important;
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    position:relative!important;
+  }
+  .content-sections > .section > .section-header:has(+ #prediction-container) > .section-title {
+    flex:0 1 auto!important;
+    width:auto!important;
+    margin:0!important;
+    text-align:left!important;
+  }
+  .content-sections > .section > .section-header:has(+ #prediction-container) > .size-controls {
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    margin:0 0 0 auto!important;
+    flex:0 0 auto!important;
+  }
+}
+@media (max-width:700px) {
+  .content-sections > .section > .section-header:has(+ #prediction-container) {
+    display:flex!important;
+    justify-content:center!important;
+    align-items:center!important;
+    width:100%!important;
+  }
+  .content-sections > .section > .section-header:has(+ #prediction-container) > .section-title {
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    text-align:center!important;
+  }
+}
+</style>
+</head>
+<body>
+    
+    <div class="header-section">
+        <h1 class="main-title">Extra Renta</h1>
+        <div class="controls-row">
+            <div class="top-inputs">
+                <div class="input-group">
+                    <div class="input-label">Datum sázky:</div>
+                    <input type="text" id="staked-date" placeholder="YYYY-MM-DD" readonly>
+                </div>
+                
+                <div class="input-group" style="display: none;"> 
+                    <div class="input-label">Částka:</div>
+                    <input type="number" id="staked-amount" value="0"> 
+                </div>
+
+                <button class="green" id="generate-button">Generovat nová čísla</button>
+                <button class="blue" id="save-all-button">Uložit všechny sázky</button>
+                <button class="red" id="evaluate-button">Vyhodnotit výsledky</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-sections"> 
+        
+        <div class="toast-message" id="statusMessage"></div> 
+        
+        <div class="section"> 
+            <div class="section-header">
+                 <div class="section-title">Predikce (4 sloupce - 7 čísel z 33)</div> 
+                 <div class="size-controls">
+                     <button class="size-button" id="zoom-out-btn">-</button> 
+                     <button class="size-button" id="zoom-in-btn">+</button>
+                 </div> 
+            </div> 
+            <div id="prediction-container" class="lottery-blocks-container">
+                </div>
+        </div>
+        
+        <div id="history-section-container" class="section"> 
+            <div class="history-header"> 
+                <div class="history-title-group">
+                    <div class="section-title">Historie vsazených sázek</div> 
+                    <div class="undo-redo-buttons"> 
+                        <button id="undo-button" title="Zpět (Undo) - Ctrl+Z" disabled>&#x21BA; Zpět</button>
+                        <button id="redo-button" title="Vpřed (Redo) - Ctrl+Y" disabled>Vpřed &#x21BB;</button>
+                    </div>
+                </div>
+                </div>
+            
+            <div class="table-container"> 
+                <table id="staked-history-table">
+                    <thead> 
+                        <tr> 
+                            <th>Datum</th> 
+                            <th class="column-combination">Kombinace</th> 
+                            <th>Cena</th> <th>Vyhodnocení</th> 
+                            <th>Shoda</th> 
+                            <th>Akce</th> 
+                        </tr> 
+                    </thead> 
+                    <tbody id="staked-history-body"> 
+                    </tbody> 
+                </table> 
+            </div>
+            <p id="no-history-message" style="display: none; margin-top: 20px;">Zatím nebyly uloženy žádné sázky.</p>
+        </div> 
+    </div> 
+    
+    <div id="deleteConfirmationModal" class="dialog-overlay modal-overlay"> 
+        <div class="confirmation-dialog modal-content"> 
+            <div class="dialog-message" id="modal-text">Opravdu chcete smazat VŠECHNY sázky pro datum [DATUM]?</div> 
+            <div class="dialog-buttons modal-buttons"> 
+                <button id="modal-cancel-btn" class="cancel-btn cancel-button">NE, ZRUŠIT</button> 
+                <button id="modal-confirm-btn" class="confirm-btn confirm-button red">ANO, SMAZAT</button> 
+            </div> 
+        </div> 
+    </div> 
+    
+    <script src="initial-data.js"></script>
+    <script src="web-core.js"></script>
+    <script> 
+        // PŮVODNÍ KONSTANTY A LOGIKA RENTA AI
+        const RENT_PREDICTION_URL = '/app/get_latest_predictions';
+        const SAVE_STAKED_URL = '/app/save_staked';
+        const GENERATE_NEW_URL = '/app/generate_new_predictions';
+        const EVALUATE_URL = '/app/evaluate_staked';
+        const GET_STATUS_URL = '/app/get_staked_status';
+        const STAKED_HISTORY_URL = '/app/get_staked_history';
+        const DELETE_STAKED_URL = '/app/delete_staked'; 
+        const RESTORE_HISTORY_URL = '/app/restore_staked_history'; 
+        
+        // NOVÁ KONSTANTA PRO SPUŠTĚNÍ KONTROLA.PY PŘES API
+        const RUN_KONTROLA_URL = '/app/run_kontrola'; 
+
+        let isGenerating = false;
+        let SAVE_ALL_BUTTON; 
+        let EVALUATE_BUTTON; 
+
+        // --- ZMĚNY JS PRO FUNKČNOST NOVÉHO VZHLEDU ---
+
+        // Fix pro Status Message: Používá sjednocené Sportka třídy (.toast-message.show)
+        function displayStatusMessage(message, type = 'success') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            // KLÍČOVÝ FIX: Zajištění, že se použije základní Sportka třída a třída pro zobrazení
+            statusDiv.className = 'toast-message visible'; 
+            statusDiv.classList.add(type);
+        }
+
+        function hideStatusMessage() {
+            document.getElementById('statusMessage').classList.remove('visible');
+            document.getElementById('statusMessage').className = 'toast-message';
+        }
+
+        // Logika pro Zoom (pro funkčnost Sportka vizuálu)
+        const body = document.body;
+        let currentZoom = 95; 
+
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            if (currentZoom > 50) {
+                currentZoom -= 5;
+                body.style.zoom = currentZoom + '%';
+            }
+        });
+        
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            if (currentZoom < 150) {
+                currentZoom += 5;
+                body.style.zoom = currentZoom + '%';
+            }
+        });
+        
+        // NOVÁ FUNKCE PRO SPUŠTĚNÍ KONTROLA.PY PŘES API (stejný princip jako Generovat)
+        function runKontrolaScript() {
+            displayStatusMessage('Spouštění skriptu pro kontrolu výher...', 'info');
+
+            fetch(RUN_KONTROLA_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Chyba serveru při spouštění skriptu.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const type = data.status === 'ok' ? 'success' : 'error';
+                    // Zobrazí zprávu vrácenou z Flask (app.py)
+                    displayStatusMessage(data.message, type); 
+                    setTimeout(hideStatusMessage, 8000); 
+                })
+                .catch(error => {
+                    displayStatusMessage(`Spuštění skriptu selhalo. Chyba: ${error.message}`, 'error');
+                    setTimeout(hideStatusMessage, 10000);
+                });
+        }
+        
+        // --- Původní logika Renta AI (ponecháno beze změny funkčnosti) ---
+        
+        let deleteConfirmationResolver = null;
+        function showDeleteModal(dateToDelete) {
+            const modal = document.getElementById('deleteConfirmationModal');
+            const modalText = document.getElementById('modal-text');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            modalText.textContent = `Opravdu chcete smazat VŠECHNY sázky pro datum ${dateToDelete}?`;
+            // Používá Sportka třídu 'visible' i pro Renta modal
+            modal.classList.add('visible'); 
+            
+            return new Promise(resolve => {
+                deleteConfirmationResolver = resolve;
+                
+                const cleanup = () => {
+                    confirmBtn.removeEventListener('click', handleConfirm);
+                    cancelBtn.removeEventListener('click', handleCancel);
+                    modal.removeEventListener('click', handleOverlayClick);
+                    deleteConfirmationResolver = null;
+                };
+
+                const handleConfirm = () => {
+                    hideDeleteModal();
+                    cleanup();
+                    resolve(true); 
+                };
+
+                const handleCancel = () => {
+                    hideDeleteModal();
+                    cleanup();
+                    resolve(false); 
+                };
+
+                const handleOverlayClick = (event) => {
+                    if (event.target === modal) {
+                        handleCancel(); 
+                    }
+                };
+
+                confirmBtn.addEventListener('click', handleConfirm);
+                cancelBtn.addEventListener('click', handleCancel);
+                modal.addEventListener('click', handleOverlayClick);
+            });
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteConfirmationModal').classList.remove('visible');
+        } 
+
+        const HistoryManager = {
+            storageKey: 'rentaStakedHistory', 
+            maxStates: 10,
+            history: [],
+            currentIndex: -1,
+            init: function() {
+                const storedHistory = localStorage.getItem(this.storageKey);
+                if (storedHistory) {
+                    try {
+                        const parsed = JSON.parse(storedHistory);
+                        this.history = parsed.history || [];
+                        this.currentIndex = parsed.currentIndex || -1;
+                        this.updateButtonState();
+                    } catch (e) {
+                        this.clear();
+                    }
+                }
+            },
+            clear: function() {
+                this.history = [];
+                this.currentIndex = -1;
+                this.saveToStorage();
+                this.updateButtonState();
+            },
+            saveToStorage: function() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify({
+                        history: this.history,
+                        currentIndex: this.currentIndex
+                    }));
+                } catch (e) {
+                }
+            },
+            addState: function(currentHistoryData) {
+                this.history.splice(this.currentIndex + 1);
+                
+                if (this.history.length > 0) {
+                    const lastState = JSON.stringify(this.history[this.history.length - 1]);
+                    const newState = JSON.stringify(currentHistoryData);
+                    if (lastState === newState) {
+                        return;
+                    }
+                }
+                
+                this.history.push(currentHistoryData);
+                this.currentIndex = this.history.length - 1;
+
+                if (this.history.length > this.maxStates) {
+                    this.history.shift();
+                    this.currentIndex--;
+                }
+                this.saveToStorage();
+                this.updateButtonState();
+            },
+            undo: function() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.restoreState();
+                }
+            },
+            redo: function() {
+                if (this.currentIndex < this.history.length - 1) {
+                    this.currentIndex++;
+                    this.restoreState();
+                }
+            },
+            restoreState: function() {
+                if (this.currentIndex >= 0 && this.currentIndex < this.history.length) {
+                    const stateToRestore = this.history[this.currentIndex];
+                    
+                    displayStatusMessage('Probíhá obnova historie z paměti (Undo/Redo)...', 'info');
+
+                    fetch(RESTORE_HISTORY_URL, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ history_data: stateToRestore }) 
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            displayStatusMessage('Historie sázek byla úspěšně obnovena.', 'success');
+                            loadStakedHistory(); 
+                        } else {
+                            displayStatusMessage(`Chyba při obnově: ${data.message}`, 'error');
+                        }
+                        this.updateButtonState(); 
+                        setTimeout(hideStatusMessage, 3000);
+                    })
+                    .catch(error => {
+                        displayStatusMessage("Obnova selhala. Zkontrolujte logy serveru.", 'error');
+                        this.updateButtonState(); 
+                        setTimeout(hideStatusMessage, 5000);
+                    });
+                }
+            },
+            updateButtonState: function() {
+                const undoButton = document.getElementById('undo-button');
+                const redoButton = document.getElementById('redo-button');
+                
+                if (undoButton && redoButton) {
+                    undoButton.disabled = this.currentIndex <= 0;
+                    redoButton.disabled = this.currentIndex >= this.history.length - 1;
+                }
+            }
+        };
+
+        async function captureStateAndExecute(actionFunction) {
+            try {
+                // 1. Získání AKTUÁLNÍHO stavu PŘED ZMĚNOU a uložení do Undo stacku
+                let response = await fetch(STAKED_HISTORY_URL);
+                let data = await response.json();
+                if (data.status === 'ok') {
+                    HistoryManager.addState(data.history); 
+                } else {
+                    console.warn('Nepodařilo se získat aktuální stav pro Undo/Redo. Chyba: ', data.message || 'Neznámá chyba');
+                }
+                
+                // 2. Provedení vlastní akce
+                await actionFunction();
+                
+                // 3. Získání NOVÉHO stavu PO ZMĚNĚ a uložení do Undo stacku
+                response = await fetch(STAKED_HISTORY_URL);
+                data = await response.json();
+                if (data.status === 'ok') {
+                    HistoryManager.addState(data.history); 
+                    loadStakedHistory();
+                    checkEvaluationStatus();
+                    loadPredictions(); // Zkontroluje i blikání Uložit
+                } else {
+                    console.warn('Nepodařilo se získat NOVÝ stav pro Undo/Redo. Chyba: ', data.message || 'Neznámá chyba');
+                }
+
+            } catch (error) {
+                console.error("Chyba v cyklu Undo/Redo akce:", error);
+            }
+        }
+        
+        function saveAllStaked() {
+            const date = document.getElementById('staked-date').value;
+            const amount = document.getElementById('staked-amount').value;
+            
+            if (!date) {
+                displayStatusMessage("Vyplňte prosím datum sázky.", 'error');
+                setTimeout(hideStatusMessage, 5000); 
+                return Promise.resolve();
+            }
+
+            const allPredictions = [];
+            const grids = document.querySelectorAll('.numbers-grid');
+            grids.forEach(grid => {
+                const numbers = JSON.parse(grid.dataset.numbers);
+                allPredictions.push(numbers);
+            });
+
+            if (allPredictions.length === 0) {
+                displayStatusMessage("Nejsou k dispozici žádné sázky k uložení.", 'error');
+                setTimeout(hideStatusMessage, 5000);
+                return Promise.resolve();
+            }
+
+            return fetch(SAVE_STAKED_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ combinations: allPredictions, date: date, amount: amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const type = data.status === 'ok' ? 'success' : 'error';
+                displayStatusMessage(data.message, type);
+                setTimeout(hideStatusMessage, 5000);
+            })
+            .catch(error => {
+                displayStatusMessage("Uložení selhalo. Zkontrolujte logy serveru.", 'error');
+                setTimeout(hideStatusMessage, 5000);
+                throw error; 
+            });
+        }
+        
+        function deleteStaked(dateToDelete) {
+             return new Promise((resolve, reject) => {
+                showDeleteModal(dateToDelete)
+                    .then(confirmed => {
+                        if (!confirmed) {
+                            resolve(); 
+                            return;
+                        }
+
+                        fetch(DELETE_STAKED_URL, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ date: dateToDelete })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            const type = data.status === 'ok' ? 'success' : 'error';
+                            displayStatusMessage(data.message, type);
+                            resolve(); 
+                            setTimeout(hideStatusMessage, 5000);
+                        })
+                        .catch(error => {
+                            displayStatusMessage("Smazání selhalo. Zkontrolujte logy serveru.", 'error');
+                            setTimeout(hideStatusMessage, 5000);
+                            reject(error); 
+                        });
+                    })
+                    .catch(reject);
+            });
+        }
+
+        function evaluateStaked() {
+            return fetch(EVALUATE_URL)
+            .then(response => response.json())
+            .then(data => {
+                const type = data.status === 'ok' ? 'success' : 'error';
+                displayStatusMessage(data.message, type);
+                setTimeout(hideStatusMessage, 5000);
+            })
+            .catch(error => {
+                displayStatusMessage("Vyhodnocení selhalo. Zkontrolujte logy serveru.", 'error');
+                setTimeout(hideStatusMessage, 5000);
+                throw error; 
+            });
+        }
+
+        function createCombinationHtml(combinationString) {
+            if (!combinationString) return 'N/A';
+            
+            const numbers = String(combinationString).split(',').map(n => n.trim()).filter(n => n);
+            
+            let html = '<div class="combination-display">';
+            numbers.forEach(number => {
+                html += `<div class="history-number-bubble">${number}</div>`;
+            });
+            html += '</div>';
+            
+            return html;
+        }
+
+        function loadStakedHistory() {
+            return fetch(STAKED_HISTORY_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Chyba při načítání historie ze serveru.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const historyTableBody = document.getElementById('staked-history-body');
+                    const historySection = document.getElementById('history-section-container');
+                    const noHistoryMessage = document.getElementById('no-history-message');
+
+                    historyTableBody.innerHTML = '';
+                    historySection.style.display = 'block'; 
+
+                    if (data.history && data.history.length > 0) {
+                        noHistoryMessage.style.display = 'none';
+                        document.getElementById('staked-history-table').style.display = 'table'; 
+
+                        let renderedDates = new Set(); 
+                        
+                        data.history.forEach(item => {
+                            const date = item.Datum_sazky;
+                            const row = document.createElement('tr');
+                            const combinationsHtml = createCombinationHtml(item.Kombinace);
+                            
+                            const evaluationText = item.Vyhodnoceni || 'Nevyhodnoceno';
+                            const matchCount = item.Shodna_cisla || ''; 
+
+                            let actionHtml = '';
+                            if (!renderedDates.has(date)) {
+                                actionHtml = `<button class="delete-button" data-date="${date}"><span class="icon">✖</span> Smazat</button>`;
+                                renderedDates.add(date); 
+                            } 
+
+                            row.innerHTML = `
+                                <td>${date}</td>
+                                <td class="column-combination">${combinationsHtml}</td>
+                                <td></td> <td>${evaluationText}</td>
+                                <td>${matchCount}</td>
+                                <td>${actionHtml}</td>
+                            `;
+                            historyTableBody.appendChild(row);
+                        });
+
+                        document.querySelectorAll('.delete-button').forEach(button => {
+                            button.addEventListener('click', (event) => {
+                                const date = event.currentTarget.dataset.date;
+                                captureStateAndExecute(() => deleteStaked(date));
+                            });
+                        });
+                    } else {
+                        noHistoryMessage.style.display = 'block';
+                        document.getElementById('staked-history-table').style.display = 'none'; 
+                    }
+                    
+                    HistoryManager.updateButtonState(); 
+                })
+                .catch(error => {
+                    console.error("Chyba při načítání historie:", error);
+                    displayStatusMessage(`Chyba: ${error.message}`, 'error');
+                    
+                    document.getElementById('history-section-container').style.display = 'block'; 
+                    document.getElementById('no-history-message').textContent = `Chyba při načítání historie: ${error.message}`;
+                    document.getElementById('no-history-message').style.display = 'block'; 
+                    setTimeout(hideStatusMessage, 5000);
+                });
+        }
+        
+
+        function displayPredictions(predictions) {
+            const container = document.getElementById('prediction-container');
+            container.innerHTML = '';
+            
+            if (!predictions || predictions.length === 0) {
+                 container.innerHTML = `<p style="color: #8bb7f0; font-weight: bold; text-align: center;">Žádné AI predikce nebyly nalezeny. Klikněte na 'Generovat nová čísla'.</p>`;
+                 return;
+            }
+
+            predictions.forEach((line, index) => {
+                // Převést čísla na pole čísel (v případě, že jsou jako string)
+                let predictedNumbers = Array.isArray(line) ? line.map(Number) : [];
+                if (predictedNumbers.length === 0 && typeof line === 'string') {
+                    predictedNumbers = line.split(',').map(n => Number(n.trim()));
+                }
+                
+                const block = document.createElement('div');
+                block.className = 'lottery-block';
+
+                const title = document.createElement('h2');
+                title.className = 'lottery-title';
+                title.textContent = `Kombinace #${index + 1}`;
+                block.appendChild(title);
+
+                const numbersGrid = document.createElement('div');
+                numbersGrid.className = 'numbers-grid';
+                numbersGrid.dataset.numbers = JSON.stringify(predictedNumbers);
+
+                // Zobrazení čísel 1 až 33 pro Extra Renta
+                for (let i = 1; i <= 33; i++) {
+                    const numberBox = document.createElement('div');
+                    numberBox.className = 'number-box';
+                    numberBox.textContent = i;
+
+                    if (predictedNumbers.includes(i)) {
+                        numberBox.classList.add('highlight');
+                    }
+                    numbersGrid.appendChild(numberBox);
+                }
+
+                block.appendChild(numbersGrid);
+                container.appendChild(block);
+            });
+        }
+        
+        function checkSaveStatus(predictions, stakedHistory) {
+            const date = document.getElementById('staked-date').value;
+            
+            if (!SAVE_ALL_BUTTON) return; 
+
+            if (!predictions || predictions.length === 0 || !date) {
+                SAVE_ALL_BUTTON.classList.remove('blinking-button');
+                return; 
+            }
+
+            const currentPredictionSet = new Set(predictions.map(combo => combo.sort((a, b) => a - b).join(',')));
+            
+            const stakedForDate = stakedHistory.filter(item => item.Datum_sazky === date);
+            
+            if (stakedForDate.length === 0) {
+                SAVE_ALL_BUTTON.classList.add('blinking-button');
+                return; 
+            }
+
+            const stakedCombinationSet = new Set(
+                stakedForDate.map(item => {
+                    try {
+                        return String(item.Kombinace).split(',').map(Number).sort((a, b) => a - b).join(',');
+                    } catch {
+                        return null; 
+                    }
+                }).filter(combo => combo !== null)
+            );
+            
+            let areAllMatches = true;
+            
+            if (currentPredictionSet.size !== stakedCombinationSet.size) {
+                areAllMatches = false;
+            } else {
+                for (const prediction of currentPredictionSet) {
+                    if (!stakedCombinationSet.has(prediction)) {
+                        areAllMatches = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (!areAllMatches) {
+                SAVE_ALL_BUTTON.classList.add('blinking-button');
+            } else {
+                SAVE_ALL_BUTTON.classList.remove('blinking-button');
+            }
+        }
+        
+        function checkEvaluationStatus() {
+            fetch(GET_STATUS_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                             throw new Error(errorData.message || 'Chyba při kontrole statusu ze serveru.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (EVALUATE_BUTTON) {
+                        if (data.needs_evaluation == 'True') {
+                            EVALUATE_BUTTON.classList.add('blinking-button');
+                        } else {
+                            EVALUATE_BUTTON.classList.remove('blinking-button');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Chyba při kontrole statusu vyhodnocení:', error);
+                });
+        }
+
+        function loadPredictions() {
+            let currentPredictions = [];
+            
+            return fetch(RENT_PREDICTION_URL)
+                .then(response => {
+                    if (!response.ok) {
+                         return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Chyba při načítání predikcí ze serveru.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    currentPredictions = data.predictions || [];
+                    displayPredictions(currentPredictions);
+                    
+                    return fetch(STAKED_HISTORY_URL); 
+                })
+                .then(response => {
+                    if (!response.ok) {
+                         return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Chyba při načítání historie pro kontrolu statusu.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                     const currentStakedHistory = data.history || [];
+                     checkSaveStatus(currentPredictions, currentStakedHistory);
+                })
+                .catch(error => {
+                    const container = document.getElementById('prediction-container');
+                    container.innerHTML = `<p style="color: #ff5252; font-weight: bold; text-align: center;">Chyba při načítání dat: ${error.message}. Zkontrolujte načtení dat a soubor web-core.js.</p>`;
+                    console.error('Došlo k chybě:', error);
+                    if (SAVE_ALL_BUTTON) {
+                        SAVE_ALL_BUTTON.classList.remove('blinking-button');
+                    }
+                    throw error;
+                });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('staked-date');
+            const generateButton = document.getElementById('generate-button');
+            
+            SAVE_ALL_BUTTON = document.getElementById('save-all-button');
+            EVALUATE_BUTTON = document.getElementById('evaluate-button');
+            const undoButton = document.getElementById('undo-button');
+            const redoButton = document.getElementById('redo-button');
+            
+            // NOVÉ: Posluchač pro odkaz "Přehled výher a proher"
+            const runKontrolaLink = document.getElementById('run-kontrola-link');
+            if (runKontrolaLink) {
+                runKontrolaLink.addEventListener('click', (event) => {
+                    event.preventDefault(); // Zabrání přesměrování
+                    runKontrolaScript(); // Spustí skript přes API
+                });
+            }
+            // KONEC NOVÉHO POSLUCHAČE
+            
+            HistoryManager.init();
+            loadPredictions(); 
+            checkEvaluationStatus(); 
+            loadStakedHistory();
+
+            undoButton.addEventListener('click', () => {
+                HistoryManager.undo();
+                HistoryManager.updateButtonState(); 
+            });
+            redoButton.addEventListener('click', () => {
+                HistoryManager.redo();
+                HistoryManager.updateButtonState(); 
+            });
+            
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey || event.metaKey) { 
+                    if (event.key === 'z' || event.key === 'Z') {
+                        event.preventDefault();
+                        if (!undoButton.disabled) {
+                            HistoryManager.undo();
+                            HistoryManager.updateButtonState(); 
+                        }
+                    } else if (event.key === 'y' || event.key === 'Y') {
+                        event.preventDefault();
+                        if (!redoButton.disabled) {
+                            HistoryManager.redo();
+                            HistoryManager.updateButtonState(); 
+                        }
+                    }
+                }
+            });
+
+            SAVE_ALL_BUTTON.addEventListener('click', () => {
+                 captureStateAndExecute(saveAllStaked);
+            });
+            
+            EVALUATE_BUTTON.addEventListener('click', () => {
+                captureStateAndExecute(evaluateStaked);
+            });
+
+            generateButton.addEventListener('click', () => {
+                if (isGenerating) {
+                    displayStatusMessage('Už se data generují, prosím počkejte na dokončení.', 'warning');
+                    return;
+                }
+                isGenerating = true;
+                displayStatusMessage('Probíhá generování predikcí, prosím počkejte...', 'info');
+
+                fetch(GENERATE_NEW_URL)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Generování selhalo s neznámou chybou serveru.');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        isGenerating = false;
+                        if (data.status === 'ok') {
+                            displayStatusMessage(data.message, 'success');
+                            loadPredictions()
+                                .finally(() => { 
+                                    if (SAVE_ALL_BUTTON) {
+                                        SAVE_ALL_BUTTON.classList.add('blinking-button');
+                                    }
+                                });
+                        } else {
+                            displayStatusMessage(data.message, 'error');
+                        }
+                        setTimeout(hideStatusMessage, 5000);
+                    })
+                    .catch(error => {
+                        isGenerating = false;
+                        displayStatusMessage(error.message, 'error');
+                        setTimeout(hideStatusMessage, 10000);
+                    });
+            });
+            
+            flatpickr(dateInput, {
+                disableMobile: true, // Stejný tmavý kalendář na mobilu i PC
+                locale: 'cs',
+                dateFormat: 'Y-m-d',
+                altFormat: 'd. F Y',
+                altInput: true,
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    const date = dayElem.dateObj;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const dayOfWeek = date.getDay();
+
+                    if (dayOfWeek === 1 || dayOfWeek === 4) {
+                        dayElem.classList.add('draw-day');
+                    }
+                    
+                    const afterCutoffToday = date.getTime() === today.getTime() && (new Date().getHours() > 18 || (new Date().getHours() === 18 && new Date().getMinutes() > 30));
+                    if ((dayOfWeek !== 1 && dayOfWeek !== 4) || date < today || afterCutoffToday) {
+                        dayElem.classList.add('non-selectable-day');
+                        dayElem.style.pointerEvents = 'none';
+			// DŮLEŽITÉ: Přidat třídu, kterou Flatpickr používá pro disabled vzhled
+	                dayElem.classList.add('flatpickr-disabled'); 
+                    }
+                },
+/* KONEČNÁ A STABILNÍ VERZE KÓDU PRO EXTRA RENTU */
+                onOpen: function(selectedDates, dateStr, instance) {
+                    instance.calendarContainer.classList.add('renta-mobile-centered');
+                },
+                onReady: function(selectedDates, dateStr, instance) {
+                    if (!instance.calendarContainer.querySelector('.renta-cal-legend')) {
+                        const legend = document.createElement('div');
+                        legend.className = 'renta-cal-legend';
+                        legend.innerHTML = '<span class="draw"><i></i>Losovací den</span><span><i></i>Nesází se / minulý</span><span class="selected-day"><i></i>Vybráno</span>';
+                        instance.calendarContainer.appendChild(legend);
+                    }
+
+                    // 1. ZÍSKÁNÍ AKTUÁLNÍHO DATA A ČASU
+                    const now = new Date(); 
+                    
+                    const dayOfWeek = now.getDay(); 
+                    // Rozlišení losovacích dnů: Pondělí (1) a Čtvrtek (4)
+                    const isDrawDayToday = (dayOfWeek === 1 || dayOfWeek === 4);
+                    
+                    // ZÍSKÁNÍ AKTUÁLNÍ HODINY A MINUTY pro kontrolu uzávěrky 18:30
+                    const currentHour = now.getHours();
+                    const currentMinute = now.getMinutes();
+                    
+                    const cutoffHour = 18;
+                    const cutoffMinute = 30;
+
+                    let nextDraw; 
+
+                    // KONTROLA ČASU (nezávislá na časové zóně)
+                    const isBeforeCutoff = (currentHour < cutoffHour) || 
+                                           (currentHour === cutoffHour && currentMinute <= cutoffMinute);
+                                           
+                    // KONTROLA A. POUŽITÍ DNEŠNÍHO DATA: Losovací den A PŘED 18:30
+                    if (isDrawDayToday && isBeforeCutoff) {
+                        
+                        // Podmínka splněna. Použijeme DNEŠEK.
+                        nextDraw = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        
+                    } else {
+                        // KONTROLA B. POUŽITÍ PŘÍŠTÍHO DATA: Po 18:30 NEBO není losovací den
+
+                        // 1. Nastavíme se na zítřek (00:00:00)
+                        nextDraw = new Date(now); 
+                        nextDraw.setDate(nextDraw.getDate() + 1); 
+                        nextDraw.setHours(0, 0, 0, 0); 
+
+                        // 2. Cyklus pro nalezení nejbližšího Pondělí (1) nebo Čtvrtka (4)
+                        let nextDay = nextDraw.getDay();
+                        
+                        // Hledáme POUZE losovací dny 1 (Pondělí) a 4 (Čtvrtek)
+                        while (nextDay !== 1 && nextDay !== 4) {
+                            nextDraw.setDate(nextDraw.getDate() + 1);
+                            nextDay = nextDraw.getDay(); 
+                        }
+                    }
+                    
+                    // Nastavení vypočteného data
+                    instance.setDate(nextDraw, true);
+                },
+			onChange: function(selectedDates, dateStr, instance) {
+                    const date = selectedDates[0];
+                    if (date) {
+                        const dayOfWeek = date.getDay();
+                        if (dayOfWeek === 1 || dayOfWeek === 4) {
+                            dateInput.classList.remove('date-input-not-confirmed', 'date-input-error');
+                            dateInput.classList.add('date-input-confirmed');
+                            loadPredictions(); 
+                        } else {
+                            dateInput.classList.remove('date-input-not-confirmed');
+                            dateInput.classList.add('date-input-error');
+                            displayStatusMessage('Datum musí být pondělí nebo čtvrtek (slosovací dny)!', 'error');
+                            setTimeout(hideStatusMessage, 3000);
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+<script>
+/* Pouze ovládání vzhledu; výpočetní funkce Renty zůstávají původní. */
+(function(){
+const top=document.querySelector('.top-inputs'),date=document.querySelector('.top-inputs .input-group'),buttons=['generate-button','save-all-button','evaluate-button'].map(id=>document.getElementById(id));
+const menu=document.createElement('button');menu.type='button';menu.className='renta-mobile-menu';menu.id='rentaMenu';menu.setAttribute('aria-expanded','false');menu.innerHTML='<span>☰</span> Menu';
+const actions=document.createElement('div');actions.className='renta-mobile-actions';actions.id='rentaActions';buttons.forEach(b=>actions.append(b));top.insertBefore(menu,date);top.append(actions);
+const mobile=()=>matchMedia('(max-width:700px)').matches;
+function close(){actions.classList.remove('expanded');menu.setAttribute('aria-expanded','false')}
+menu.addEventListener('click',()=>{const open=actions.classList.toggle('expanded');menu.setAttribute('aria-expanded',String(open))});
+buttons.forEach(b=>b.addEventListener('click',close));
+document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!actions.contains(e.target))close();const p=document.querySelector('.renta-settings');if(p?.open&&!p.contains(e.target))p.open=false});
+window.addEventListener('resize',()=>{if(!mobile())close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+const badge=document.createElement('div');badge.className='renta-sync-badge';badge.id='rentaSyncBadge';badge.setAttribute('role','status');document.body.append(badge);
+function badgeUpdate(){let cfg={};try{cfg=JSON.parse(sessionStorage.getItem('renta_github_config')||'{}')}catch{}const connected=!!(cfg.owner&&cfg.repo&&cfg.token);const warning=document.getElementById('renta-sync-warning')?.textContent||'';badge.classList.toggle('error',connected&&!!warning);badge.classList.toggle('synced',false);badge.textContent=!connected?'⚠ GitHub: nepřipojeno':warning?'⚠ GitHub: chyba synchronizace':'◷ GitHub: připojeno (stav dat neověřen)'}
+const observer=new MutationObserver(()=>{const p=document.querySelector('.renta-settings');if(p&&!p.querySelector('.renta-side-inner')){const inner=document.createElement('div');inner.className='renta-side-inner';[...p.children].filter(el=>el.tagName!=='SUMMARY').forEach(el=>inner.append(el));p.append(inner);p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{p.open=false;setTimeout(badgeUpdate,0)}));}badgeUpdate()});observer.observe(document.body,{childList:true,subtree:false});document.addEventListener('DOMContentLoaded',()=>{badgeUpdate();const warning=document.getElementById('renta-sync-warning');if(warning)new MutationObserver(badgeUpdate).observe(warning,{childList:true,subtree:true,characterData:true})});badgeUpdate();
+})();
+</script>
+</body>
+</html>
