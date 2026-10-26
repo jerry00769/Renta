@@ -2250,31 +2250,31 @@
       "Datum_sazky": "2026-03-16",
       "Kombinace": "5,6,9,17,18,22,32",
       "Cena": "0",
-      "Vyhodnoceni": "Nevyhodnoceno",
-      "Shodna_cisla": "",
+      "Vyhodnoceni": "Prohra (2 shody)",
+      "Shodna_cisla": "5,18",
       "Poradi": "1"
     },
     {
       "Datum_sazky": "2026-03-16",
       "Kombinace": "1,3,4,11,27,28,32",
       "Cena": "0",
-      "Vyhodnoceni": "Nevyhodnoceno",
-      "Shodna_cisla": "",
+      "Vyhodnoceni": "Prohra (2 shody)",
+      "Shodna_cisla": "3,28",
       "Poradi": "2"
     },
     {
       "Datum_sazky": "2026-03-16",
       "Kombinace": "10,12,13,15,17,19,32",
       "Cena": "0",
-      "Vyhodnoceni": "Nevyhodnoceno",
-      "Shodna_cisla": "",
+      "Vyhodnoceni": "Prohra (1 shoda)",
+      "Shodna_cisla": "19",
       "Poradi": "3"
     },
     {
       "Datum_sazky": "2026-03-16",
       "Kombinace": "12,15,17,20,23,25,29",
       "Cena": "0",
-      "Vyhodnoceni": "Nevyhodnoceno",
+      "Vyhodnoceni": "Prohra",
       "Shodna_cisla": "",
       "Poradi": "4"
     },
@@ -2409,40 +2409,40 @@
   ],
   "predictions": [
     [
-      1,
       5,
       10,
+      13,
       16,
-      24,
+      21,
       25,
-      31
+      30
     ],
     [
-      4,
-      11,
-      13,
+      7,
       15,
       19,
-      21,
+      20,
+      24,
+      29,
       32
     ],
     [
+      1,
+      3,
+      10,
       12,
-      17,
-      20,
-      25,
-      29,
-      32,
-      33
+      16,
+      28,
+      31
     ],
     [
-      3,
+      2,
+      4,
+      13,
       15,
-      16,
-      18,
-      21,
       27,
-      30
+      32,
+      33
     ]
   ],
   "version": 1
