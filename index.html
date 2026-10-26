@@ -973,6 +973,42 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
     text-align:center!important;
   }
 }
+
+/* Renta: mobilni posuvnik uvnitr bocniho panelu jako u Eurojackpotu. */
+@media (max-width:700px) {
+  .renta-settings > .renta-side-inner {
+    max-height: min(72dvh, 620px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #334e6e #1a2a43;
+  }
+  .renta-settings > .renta-side-inner::-webkit-scrollbar { width: 6px; }
+  .renta-settings > .renta-side-inner::-webkit-scrollbar-track { background: #1a2a43; }
+  .renta-settings > .renta-side-inner::-webkit-scrollbar-thumb { background: #334e6e; border-radius: 6px; }
+}
+
+/* Mobil: posuvník odsazený vlevo před pevným ouškem panelu. */
+@media (max-width:700px) {
+  .renta-settings > .renta-side-inner {
+    width:calc(100% - 32px)!important;
+    border-right:0!important;
+  }
+  .renta-settings::before {
+    content:"";
+    position:absolute;
+    top:0;
+    bottom:0;
+    right:22px;
+    width:10px;
+    background:#1a2a43;
+    border-top:1px solid #425b7e;
+    border-bottom:1px solid #425b7e;
+    pointer-events:none;
+  }
+}
 </style>
 </head>
 <body>
