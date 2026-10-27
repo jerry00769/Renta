@@ -334,6 +334,8 @@
             flex-shrink: 0;
         }
         
+        .numbers-grid .number-box {cursor:pointer;user-select:none;touch-action:manipulation;}
+        .numbers-grid .number-box:focus-visible {outline:2px solid #ffdc79;outline-offset:2px;}
         .number-box.highlight {
             background-color: #5ab2ff; /* Sportka highlight color */
             transform: none;
@@ -1379,6 +1381,18 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
                 return Promise.resolve();
             }
 
+            const incomplete = allPredictions.findIndex(numbers => numbers.length !== 7 || new Set(numbers).size !== numbers.length);
+            if (incomplete !== -1) {
+                const count = allPredictions[incomplete].length;
+                displayStatusMessage(`Kombinace ${incomplete + 1}: ${count < 7 ? 'doplň '+(7-count)+' '+(7-count===1?'číslo':(7-count>=2&&7-count<=4?'čísla':'čísel')) : 'zkontroluj vybraná čísla'} (vybráno ${count} ze 7).`, 'error');
+                if (window.matchMedia('(max-width: 600px)').matches) {
+                    const block = document.querySelectorAll('#prediction-container .lottery-block')[incomplete];
+                    if (block) block.scrollIntoView({behavior:'smooth',block:'center'});
+                }
+                setTimeout(hideStatusMessage, 5500);
+                return Promise.resolve();
+            }
+
             return fetch(SAVE_STAKED_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -1530,6 +1544,35 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
         }
         
 
+        function updateRentaCount(block) {
+            const grid = block.querySelector('.numbers-grid');
+            const count = JSON.parse(grid.dataset.numbers || '[]').length;
+            const title = block.querySelector('.lottery-title');
+            const number = title.querySelector('.renta-count');
+            if (number) { number.textContent = count; number.style.color = count === 7 ? 'inherit' : '#ff5555'; }
+        }
+        function editRentaNumber(grid, number) {
+            const selected = JSON.parse(grid.dataset.numbers || '[]').map(Number);
+            const index = selected.indexOf(number);
+            if (index >= 0) selected.splice(index, 1);
+            else if (selected.length >= 7) {
+                displayStatusMessage('Nejdříve odznač jedno z 7 vybraných čísel.', 'warning');
+                setTimeout(hideStatusMessage, 3500);
+                return;
+            } else selected.push(number);
+            selected.sort((a,b) => a-b);
+            grid.dataset.numbers = JSON.stringify(selected);
+            grid.querySelectorAll('.number-box').forEach(box => {
+                const on = selected.includes(Number(box.textContent));
+                box.classList.toggle('highlight', on);
+                box.setAttribute('aria-pressed', String(on));
+            });
+            updateRentaCount(grid.closest('.lottery-block'));
+            if (SAVE_ALL_BUTTON) SAVE_ALL_BUTTON.classList.add('blinking-button');
+            fetch('/app/update_prediction', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:Number(grid.dataset.index),numbers:selected})})
+                .then(r=>r.json()).then(d=>{if(d.status!=='ok')throw Error(d.message||'Uložení změny selhalo');})
+                .catch(e=>displayStatusMessage('Změna nebyla synchronizována: '+e.message,'error'));
+        }
         function displayPredictions(predictions) {
             const container = document.getElementById('prediction-container');
             container.innerHTML = '';
@@ -1551,18 +1594,25 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
 
                 const title = document.createElement('h2');
                 title.className = 'lottery-title';
-                title.textContent = `Kombinace #${index + 1}`;
+                title.innerHTML = `Kombinace ${index + 1} (<span class="renta-count">${predictedNumbers.length}</span>)`;
                 block.appendChild(title);
 
                 const numbersGrid = document.createElement('div');
                 numbersGrid.className = 'numbers-grid';
                 numbersGrid.dataset.numbers = JSON.stringify(predictedNumbers);
+                numbersGrid.dataset.index = index;
 
                 // Zobrazení čísel 1 až 33 pro Extra Renta
                 for (let i = 1; i <= 33; i++) {
                     const numberBox = document.createElement('div');
                     numberBox.className = 'number-box';
                     numberBox.textContent = i;
+                    numberBox.setAttribute('role','button');
+                    numberBox.setAttribute('tabindex','0');
+                    numberBox.setAttribute('aria-label', 'Číslo '+i);
+                    numberBox.setAttribute('aria-pressed',String(predictedNumbers.includes(i)));
+                    numberBox.addEventListener('click',()=>editRentaNumber(numbersGrid,i));
+                    numberBox.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();editRentaNumber(numbersGrid,i);}});
 
                     if (predictedNumbers.includes(i)) {
                         numberBox.classList.add('highlight');
@@ -1572,6 +1622,7 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
 
                 block.appendChild(numbersGrid);
                 container.appendChild(block);
+                updateRentaCount(block);
             });
         }
         
