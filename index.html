@@ -1082,16 +1082,6 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
         </div> 
     </div> 
     
-    <div id="deleteConfirmationModal" class="dialog-overlay modal-overlay"> 
-        <div class="confirmation-dialog modal-content"> 
-            <div class="dialog-message" id="modal-text">Opravdu chcete smazat VŠECHNY sázky pro datum [DATUM]?</div> 
-            <div class="dialog-buttons modal-buttons"> 
-                <button id="modal-cancel-btn" class="cancel-btn cancel-button">NE, ZRUŠIT</button> 
-                <button id="modal-confirm-btn" class="confirm-btn confirm-button red">ANO, SMAZAT</button> 
-            </div> 
-        </div> 
-    </div> 
-    
     <script src="initial-data.js"></script>
     <script src="web-core.js"></script>
     <script> 
@@ -1173,53 +1163,10 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
         
         // --- Původní logika Renta AI (ponecháno beze změny funkčnosti) ---
         
-        let deleteConfirmationResolver = null;
+        // Stejný nativní potvrzovací dialog jako u Sportky.
         function showDeleteModal(dateToDelete) {
-            const modal = document.getElementById('deleteConfirmationModal');
-            const modalText = document.getElementById('modal-text');
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            const cancelBtn = document.getElementById('modal-cancel-btn');
-            modalText.textContent = `Opravdu chcete smazat VŠECHNY sázky pro datum ${dateToDelete}?`;
-            // Používá Sportka třídu 'visible' i pro Renta modal
-            modal.classList.add('visible'); 
-            
-            return new Promise(resolve => {
-                deleteConfirmationResolver = resolve;
-                
-                const cleanup = () => {
-                    confirmBtn.removeEventListener('click', handleConfirm);
-                    cancelBtn.removeEventListener('click', handleCancel);
-                    modal.removeEventListener('click', handleOverlayClick);
-                    deleteConfirmationResolver = null;
-                };
-
-                const handleConfirm = () => {
-                    hideDeleteModal();
-                    cleanup();
-                    resolve(true); 
-                };
-
-                const handleCancel = () => {
-                    hideDeleteModal();
-                    cleanup();
-                    resolve(false); 
-                };
-
-                const handleOverlayClick = (event) => {
-                    if (event.target === modal) {
-                        handleCancel(); 
-                    }
-                };
-
-                confirmBtn.addEventListener('click', handleConfirm);
-                cancelBtn.addEventListener('click', handleCancel);
-                modal.addEventListener('click', handleOverlayClick);
-            });
+            return Promise.resolve(window.confirm(`Smazat všechny sázky pro datum ${dateToDelete}?`));
         }
-
-        function hideDeleteModal() {
-            document.getElementById('deleteConfirmationModal').classList.remove('visible');
-        } 
 
         const HistoryManager = {
             storageKey: 'rentaStakedHistory', 
