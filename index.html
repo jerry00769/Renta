@@ -1011,6 +1011,52 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
     pointer-events:none;
   }
 }
+
+/* 2026-10-27: mobilní historie zarovnaná na šířku kombinací. */
+@media (max-width:700px) {
+  #history-section-container {
+    width:min(270px,100%)!important;
+    max-width:270px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    padding:0!important;
+  }
+  #history-section-container .history-header {
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    padding-bottom:12px!important;
+  }
+  #history-section-container .history-title-group {
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+  }
+  #history-section-container .history-title-group .section-title {
+    width:100%!important;
+    text-align:center!important;
+  }
+  #history-section-container .undo-redo-buttons {
+    display:flex!important;
+    justify-content:center!important;
+  }
+  #history-section-container .table-container {
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 auto!important;
+  }
+  #staked-history-table tbody tr {
+    width:100%!important;
+    max-width:100%!important;
+  }
+}
+
 </style>
 </head>
 <body>
