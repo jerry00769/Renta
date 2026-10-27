@@ -2405,6 +2405,38 @@
       "Vyhodnoceni": "Prohra (1 shoda)",
       "Shodna_cisla": "31",
       "Poradi": "4"
+    },
+    {
+      "Datum_sazky": "2026-10-29",
+      "Kombinace": "5,8,15,16,21,25,32",
+      "Cena": "0",
+      "Vyhodnoceni": "Nevyhodnoceno",
+      "Shodna_cisla": "",
+      "Poradi": 1
+    },
+    {
+      "Datum_sazky": "2026-10-29",
+      "Kombinace": "4,10,13,19,24,25,29",
+      "Cena": "0",
+      "Vyhodnoceni": "Nevyhodnoceno",
+      "Shodna_cisla": "",
+      "Poradi": 2
+    },
+    {
+      "Datum_sazky": "2026-10-29",
+      "Kombinace": "1,11,14,16,20,28,31",
+      "Cena": "0",
+      "Vyhodnoceni": "Nevyhodnoceno",
+      "Shodna_cisla": "",
+      "Poradi": 3
+    },
+    {
+      "Datum_sazky": "2026-10-29",
+      "Kombinace": "2,7,12,15,17,19,32",
+      "Cena": "0",
+      "Vyhodnoceni": "Nevyhodnoceno",
+      "Shodna_cisla": "",
+      "Poradi": 4
     }
   ],
   "predictions": [
