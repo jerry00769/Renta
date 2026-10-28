@@ -1057,6 +1057,54 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
   }
 }
 
+
+/* Jednotna barevna semantika hlaseni ve vsech trech loteriich. */
+.toast-message.info,.sportka-toast.info {background:#2196f3!important;color:#fff!important}
+.toast-message.success,.sportka-toast.success {background:#4caf50!important;color:#15283d!important}
+.toast-message.warning,.sportka-toast.warning {background:#ffed4a!important;color:#15283d!important}
+.toast-message.error,.sportka-toast.error {background:#d32f2f!important;color:#fff!important}
+
+
+/* 2026-10-28: stejna vnejsi rezerva u cisel a stejna sirka historie. */
+:root{--lot-ball:25px;--lot-step:4px;--lot-pad:18px;--lot-gap:12px;--lot-cols:2;--lot-card:306px;--lot-total:calc(var(--lot-cols) * var(--lot-card) + (var(--lot-cols) - 1) * var(--lot-gap))}
+@media(max-width:700px){:root{--lot-cols:1}}
+@media(max-width:310px){:root{--lot-ball:23px;--lot-step:3px}}
+#prediction-container.lottery-blocks-container{box-sizing:border-box!important;display:grid!important;grid-template-columns:repeat(var(--lot-cols),minmax(0,var(--lot-card)))!important;gap:var(--lot-gap)!important;width:min(100%,var(--lot-total))!important;max-width:100%!important;margin-inline:auto!important;justify-content:center!important;justify-items:stretch!important}
+#prediction-container .lottery-block{box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;padding:14px var(--lot-pad)!important}
+#prediction-container .numbers-grid{grid-template-columns:repeat(7,var(--lot-ball))!important;gap:var(--lot-step)!important;width:max-content!important;max-width:100%!important;margin-inline:auto!important;justify-content:center!important}
+#prediction-container .number-box{width:var(--lot-ball)!important;height:var(--lot-ball)!important;box-sizing:border-box!important;aspect-ratio:1!important}
+#history-section-container{box-sizing:border-box!important;width:min(100%,var(--lot-total))!important;max-width:100%!important;margin-inline:auto!important}
+#history-section-container .history-header,#history-section-container .table-container{box-sizing:border-box!important;width:100%!important;max-width:100%!important}
+.content-sections>.section>.section-header:has(+ #prediction-container){box-sizing:border-box!important;width:min(100%,var(--lot-total))!important;max-width:100%!important;margin-inline:auto!important}
+
+
+/* 2026-10-28: sjednocení nadpisu a horních ovládacích prvků podle Sportky.
+   PC/tablet: shodné rozměry; mobilní menu ponecháno beze změny. */
+@media (min-width:701px) {
+  .header-section .main-title {font-size:28px!important;line-height:1.2!important;letter-spacing:1px!important;margin:0 0 8px!important;}
+  .header-section {box-sizing:border-box!important;max-width:100%!important;}
+  .header-section .controls-row {width:100%!important;box-sizing:border-box!important;}
+  .header-section .top-inputs {display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-end!important;column-gap:10px!important;row-gap:8px!important;margin-inline:auto!important;box-sizing:border-box!important;}
+  .header-section .top-inputs .input-group {flex:0 0 auto!important;}
+  .header-section .top-inputs .input-label {font-size:11px!important;line-height:1.25!important;}
+  .header-section .top-inputs #staked-date {box-sizing:border-box!important;width:125px!important;height:32px!important;padding:5px 8px!important;font-size:12px!important;}
+  .header-section .top-inputs #generate-button,
+  .header-section .top-inputs #save-all-button,
+  .header-section .top-inputs #evaluate-button {box-sizing:border-box!important;min-height:44px!important;height:44px!important;padding:10px 13px!important;font-size:12px!important;line-height:1.2!important;white-space:nowrap!important;flex:0 0 auto!important;}
+}
+
+/* Renta: tlačítka se musí vejít do šířky sestavy kombinací. */
+@media (min-width:701px) {
+ .header-section .top-inputs {width:min(100%,var(--lot-total))!important;max-width:var(--lot-total)!important;}
+}
+
+
+/* PC/tablet: vsechna ctyri horni pole vzdy na jednom radku, nezavisle na uzsich kombinacich. */
+@media (min-width:701px){
+ .header-section .top-inputs{width:max-content!important;max-width:100%!important;flex-wrap:nowrap!important;column-gap:10px!important;row-gap:0!important}
+ .header-section .top-inputs .input-group,.header-section .top-inputs button{flex-shrink:0!important}
+}
+
 </style>
 </head>
 <body>
@@ -1377,7 +1425,7 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
             const incomplete = allPredictions.findIndex(numbers => numbers.length !== 7 || new Set(numbers).size !== numbers.length);
             if (incomplete !== -1) {
                 const count = allPredictions[incomplete].length;
-                displayStatusMessage(`Kombinace ${incomplete + 1}: ${count < 7 ? 'doplň '+(7-count)+' '+(7-count===1?'číslo':(7-count>=2&&7-count<=4?'čísla':'čísel')) : 'zkontroluj vybraná čísla'} (vybráno ${count} ze 7).`, 'error');
+                displayStatusMessage(`Kombinace ${incomplete + 1}: ${count < 7 ? 'doplň '+(7-count)+' '+(7-count===1?'číslo':(7-count>=2&&7-count<=4?'čísla':'čísel')) : 'zkontroluj vybraná čísla'} (vybráno ${count} ze 7).`, 'warning');
                 if (window.matchMedia('(max-width: 600px)').matches) {
                     const block = document.querySelectorAll('#prediction-container .lottery-block')[incomplete];
                     if (block) block.scrollIntoView({behavior:'smooth',block:'center'});
@@ -1549,7 +1597,7 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
             const index = selected.indexOf(number);
             if (index >= 0) selected.splice(index, 1);
             else if (selected.length >= 7) {
-                displayStatusMessage('Nejdříve odznač jedno z 7 vybraných čísel.', 'warning');
+                displayStatusMessage(`Kombinace ${Number(grid.dataset.index) + 1} již obsahuje 7 čísel. Nejprve jedno odznač.`, 'warning');
                 setTimeout(hideStatusMessage, 3500);
                 return;
             } else selected.push(number);
@@ -1812,7 +1860,7 @@ body{zoom:1!important;margin:0!important;padding:12px 10px!important;display:blo
                     .then(data => {
                         isGenerating = false;
                         if (data.status === 'ok') {
-                            displayStatusMessage(data.message, 'success');
+                            displayStatusMessage(data.message, 'info');
                             loadPredictions()
                                 .finally(() => { 
                                     if (SAVE_ALL_BUTTON) {
