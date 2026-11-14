@@ -62,7 +62,7 @@ function same(a, b) {
          [...b].sort((x,y) => x-y).join(',');
 }
 
-const header = 'Datum;sloupec 1;sloupec 2;sloupec 3;sloupec 4;sloupec 5;sloupec 6;sloupec 7';
+const header = 'Datum;sloupec 1;sloupec 2;sloupec 3;sloupec 4;sloupec 5;sloupec 6;sloupec 7;Dodatkove cislo';
 
 const original = readFileSync('renta.csv', 'utf8')
   .replace(/^\uFEFF/, '');
@@ -73,17 +73,20 @@ const draws = new Map();
 for (const line of lines.slice(1)) {
   const a = line.split(';');
   const d = iso(a[0]);
-  const ns = a.slice(1).map(x => Number(x.trim()));
+  const ns = a.slice(1,8).map(x => Number(x.trim()));
+  const extra=String(a[8]??'').trim();
+  const bonus=extra===''?null:Number(extra);
+  if(extra!==''&&(!Number.isInteger(bonus)||bonus<1||bonus>33||ns.includes(bonus)))throw Error('Neplatné dodatkové číslo: '+line);
 
   if (!d || !valid(ns)) {
     throw Error('Neplatný historický záznam: ' + line);
   }
 
-  if (draws.has(d) && !same(draws.get(d), ns)) {
+  if (draws.has(d) && !same(draws.get(d).main, ns)) {
     throw Error('Konflikt v původním CSV: ' + d);
   }
 
-  draws.set(d, ns);
+  draws.set(d, {main:ns,bonus});
 }
 
 console.log('Původní historie:', draws.size, 'losování');
@@ -115,6 +118,7 @@ if (!table)
 
 let parsed = 0;
 let added = 0;
+let addedBonus = 0;
 
 for (const match of table.matchAll(
   /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi
@@ -147,11 +151,12 @@ for (const match of table.matchAll(
   parsed++;
 
   if (draws.has(date)) {
-    if (!same(draws.get(date), main))
+    if (!same(draws.get(date).main, main))
       throw Error('Konflikt výsledků pro ' + date +
         '. CSV nebylo změněno.');
+    if(numbers.length===8&&draws.get(date).bonus==null){draws.get(date).bonus=numbers[7];addedBonus++;}
   } else {
-    draws.set(date, main);
+    draws.set(date, {main,bonus:numbers.length===8?numbers[7]:null});
     added++;
     console.log('Nové losování:', date, main.join(', '));
   }
@@ -160,14 +165,14 @@ for (const match of table.matchAll(
 if (parsed === 0)
   throw Error('Nenalezeny platné výsledky. CSV zachováno.');
 
-if (added === 0) {
+if (added === 0 && addedBonus === 0) {
   console.log('Historie je aktuální. Žádná změna.');
 } else {
   const output = [
     header,
     ...[...draws.entries()]
       .sort((a,b) => b[0].localeCompare(a[0]))
-      .map(([date, nums]) => [cz(date), ...nums].join(';'))
+      .map(([date, draw]) => [cz(date), ...draw.main, draw.bonus??''].join(';'))
   ].join('\r\n') + '\r\n';
 
   writeFileSync('renta.csv', output, 'utf8');
