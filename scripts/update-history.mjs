@@ -69,6 +69,7 @@ const original = readFileSync('renta.csv', 'utf8')
 
 const lines = original.split(/\r?\n/).filter(x => x.trim());
 const draws = new Map();
+const incomplete = []; // Staré poškozené řádky, pouze pro bezpečné ověření duplicity.
 
 for (const line of lines.slice(1)) {
   const a = line.split(';');
@@ -79,6 +80,10 @@ for (const line of lines.slice(1)) {
   if(extra!==''&&(!Number.isInteger(bonus)||bonus<1||bonus>33||ns.includes(bonus)))throw Error('Neplatné dodatkové číslo: '+line);
 
   if (!d || !valid(ns)) {
+    if (!d && valid(ns) && extra === '') {
+      incomplete.push({line, main: ns});
+      continue;
+    }
     throw Error('Neplatný historický záznam: ' + line);
   }
 
@@ -89,6 +94,13 @@ for (const line of lines.slice(1)) {
   draws.set(d, {main:ns,bonus});
 }
 
+// Nepřidělujeme neúplnému datu datum odhadem. Řádek lze odstranit jen
+// tehdy, pokud jde o jednoznačnou duplicitu již datovaného záznamu.
+for (const bad of incomplete) {
+  const matches = [...draws.values()].filter(x => same(x.main, bad.main));
+  if (matches.length !== 1) throw Error('Nejasný nedatovaný řádek; CSV zachováno: ' + bad.line);
+  console.log('Přeskočena ověřená duplicita bez data:', bad.line);
+}
 console.log('Původní historie:', draws.size, 'losování');
 
 const response = await fetch(SOURCE, {
@@ -165,7 +177,7 @@ for (const match of table.matchAll(
 if (parsed === 0)
   throw Error('Nenalezeny platné výsledky. CSV zachováno.');
 
-if (added === 0 && addedBonus === 0) {
+if (added === 0 && addedBonus === 0 && incomplete.length === 0) {
   console.log('Historie je aktuální. Žádná změna.');
 } else {
   const output = [
@@ -180,5 +192,5 @@ if (added === 0 && addedBonus === 0) {
 
 console.log(
   `HOTOVO: ${parsed} ověřených, ` +
-  `${added} nových, ${draws.size} celkem.`
+  `${added} nových, ${addedBonus} doplněných dodatkových čísel, ${draws.size} celkem.`
 );
