@@ -4,7 +4,7 @@ name: Aktualizace historie Extra Renty
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 21 * * 1,4'
+    - cron: '30 21 * * 1,4,6'
 
 permissions:
   contents: write
