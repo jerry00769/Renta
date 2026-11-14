@@ -29,3 +29,4 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Extra Renta: aktualizace historie losovani"
             git push
+          fi
