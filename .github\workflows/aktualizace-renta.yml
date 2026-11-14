@@ -26,6 +26,9 @@ jobs:
       - name: Stahnout a overit vysledky
         run: node scripts/update-history.mjs
 
+      - name: Overit tabulku vyher Extra Renty
+        run: python3 scripts/update-payouts.py
+
       - name: Ulozit aktualizovanou historii
         run: |
           git config user.name "github-actions[bot]"
