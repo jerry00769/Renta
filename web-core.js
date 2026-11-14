@@ -130,8 +130,7 @@ function renderFinance(){
  const audit=learningAudit(),statsData=stats();const content=document.createElement('div');content.style.lineHeight='1.7';
  content.textContent=`SMART HYBRID: ${statsData.count} historických tahů, ${statsData.checked} ověřených sázek. Časový test ${audit.trials} tahů bez znalosti budoucích výsledků: dlouhodobá četnost ${audit.longAvg.toFixed(2)}, posledních 30 tahů ${audit.recentAvg.toFixed(2)}, náhodné očekávání ${audit.randomAvg.toFixed(2)} shody. Test četností není důkaz predikční výhody. Výherní pravidla: ${rules.source||'pravidla Extra Renty'}; základ 25 Kč nebo dvojnásobek při 50 Kč. U šesti zásahů je nutné znát dodatkové číslo. Historie renta.csv uchovává jen sedm hlavních čísel.`;
  section.append(content);root.append(section);
- const list=document.createElement('details');list.style.marginTop='8px';list.innerHTML='<summary style="cursor:pointer;color:#8bb7f0;font-weight:bold;padding:8px 0">Rozpis sázek a výpočtů</summary>';
- for(const item of details){const p=document.createElement('div');p.style.cssText='padding:5px 0;border-bottom:1px solid #354660';p.textContent=`${date(item.bet.Datum_sazky)} · ${item.bet.Kombinace} · ${item.status} · vklad ${money(item.cost)}${item.value!==undefined?' · výhra '+money(item.value):''}`;list.append(p)}root.append(list);
+
 }
 
 function openFinance(){renderFinance();financeDialog().showModal()}
