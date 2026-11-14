@@ -81,6 +81,7 @@ function learningAudit(){
 
 function financeDialog(){let dlg=document.getElementById('renta-finance-dialog');if(dlg)return dlg;
  dlg=document.createElement('dialog');dlg.id='renta-finance-dialog';dlg.style.cssText='background:#17243b;color:#e7f0ff;border:1px solid #54739c;border-radius:12px;padding:16px;width:min(570px,calc(100vw - 30px));max-height:85vh;overflow:auto;box-shadow:0 15px 55px #000a;font:13px Arial,sans-serif';
+ if(!document.getElementById('renta-fin-style')){const style=document.createElement('style');style.id='renta-fin-style';style.textContent='#renta-finance-dialog::backdrop{background:rgba(0,0,0,.78)}#renta-finance-dialog{background:#242e48!important;border-color:#52617f!important}#renta-finance-dialog .renta-fin-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#303b58;border:1px solid #465879;border-radius:5px;padding:11px;margin:7px 0}#renta-finance-dialog .renta-fin-row strong{text-align:right}#renta-finance-dialog h3{color:#a7c9ff;font-size:14px;margin:18px 0 8px}#renta-finance-dialog .renta-fin-chips{display:flex;gap:5px;flex-wrap:wrap}#renta-finance-dialog .renta-fin-chips span{border:1px solid #506a95;border-radius:3px;background:#334361;padding:4px 7px}#renta-finance-dialog .renta-fin-audit{display:grid;grid-template-columns:1fr 1fr;gap:8px}#renta-finance-dialog .renta-fin-audit>div{display:flex;flex-direction:column;gap:6px;padding:10px;background:#303b58;border:1px solid #465879;border-radius:5px}';document.head.append(style)}
  dlg.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:15px"><h2 style="font-size:17px;margin:0;color:#8bb7f0">Automatická bilance sázek</h2><button type="button" id="renta-fin-close" style="padding:6px 12px">Zavřít ✕</button></div><div id="renta-fin-body" style="margin-top:16px"></div>';
  document.body.append(dlg);dlg.querySelector('#renta-fin-close').onclick=()=>dlg.close();dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});return dlg}
 function renderFinance(){
@@ -113,14 +114,13 @@ function renderFinance(){
  const money=n=>Number(n).toLocaleString('cs-CZ',{style:'currency',currency:'CZK'});
  root.replaceChildren();
  const top=document.createElement('div');
- top.innerHTML=`<div style="display:grid;gap:7px;margin:4px 0 14px;font-size:13px;line-height:1.45">
- <div>Vyhodnoceno: <strong>${evaluated} sloupců</strong>; evidováno ${bets.length} sázek; bez výsledku ${bets.length-evaluated}.</div>
- <div>Výherní sloupce: <strong>${winning}</strong>.</div>
- <div>Náklady: <strong>${money(spent)}</strong>${missingCost?' (odhad podle 25 Kč za sloupec)':''}.</div>
- <div>Tabulkové výhry: <strong>${money(knownPayout)}</strong>${uncertain?' (neúplné)':''}.</div>
- <div>Čistá bilance: <strong>${complete?money(knownPayout-spent):'zatím nelze určit přesně'}</strong>${complete&&missingCost?' (odhad)':''}.</div>
- <div>Návratnost: <strong>${complete&&spent>0?(100*knownPayout/spent).toFixed(1).replace('.',',')+' %':'zatím nelze určit přesně'}</strong>.</div>
- </div>`;
+ const row=(label,value)=>`<div class="renta-fin-row"><span>${label}</span><strong>${value}</strong></div>`;
+ top.innerHTML=row('Vyhodnoceno',`${evaluated} sloupců; evidováno ${bets.length} sázek; bez výsledku ${bets.length-evaluated}`)+
+ row('Výherní sloupce',`${winning} výher`)+
+ row('Náklady',`${money(spent)}${missingCost?' (odhad)':''}`)+
+ row('Tabulkové výhry',`${money(knownPayout)}${uncertain?' (neúplné)':''}`)+
+ row('Čistá bilance',`${complete?money(knownPayout-spent):'zatím nelze určit přesně'}${complete&&missingCost?' (odhad)':''}`)+
+ row('Návratnost',`${complete&&spent>0?(100*knownPayout/spent).toFixed(1).replace('.',',')+' %':'zatím nelze určit přesně'}`);
  root.append(top);
  const note=document.createElement('p');note.style.cssText='color:#ffcb7c;line-height:1.5';
  note.textContent=(missingCost?`${missingCost} sázek nemá uloženou cenu 25/50 Kč: počítám orientačně 25 Kč za sloupec. `:'')+(uncertain?`${uncertain} sázek se 6 shodami nelze přesně vyhodnotit bez dodatkového čísla. `:'')+(evaluated<bets.length?`${bets.length-evaluated} sázek čeká na výsledek. `:'')+'Výhry jsou hrubé tabulkové částky, nikoli potvrzení skutečně vyplacené výhry; daně a případné krácení rent nejsou započteny.';
@@ -128,6 +128,14 @@ function renderFinance(){
  const section=document.createElement('details');section.style.marginTop='12px';
  const summary=document.createElement('summary');summary.textContent='Podrobnosti, zdroje a diagnostika';summary.style.cssText='cursor:pointer;color:#8bb7f0;font-weight:bold;padding:8px 0';section.append(summary);
  const audit=learningAudit(),statsData=stats();const content=document.createElement('div');content.style.lineHeight='1.7';
+ const historyFrequency=Array(34).fill(0);
+ for(const h of data.history){const a=nums(h.numbers);if(a)for(const n of a)historyFrequency[n]++}
+ const frequencies=Array.from({length:33},(_,i)=>({n:i+1,count:historyFrequency[i+1]}));
+ const chips=(arr)=>`<div class="renta-fin-chips">${arr.map(x=>`<span>${x.n} · ${x.count}×</span>`).join('')}</div>`;
+ const freqBlock=document.createElement('div');
+ freqBlock.innerHTML=`<h3>Učení a historie čísel</h3><p>Nejčastější čísla v historii:</p>${chips([...frequencies].sort((a,b)=>b.count-a.count||a.n-b.n).slice(0,10))}<p>Nejméně častá čísla v historii:</p>${chips([...frequencies].sort((a,b)=>a.count-b.count||a.n-b.n).slice(0,10))}<p>Datový základ: ${statsData.count} historických tahů a ${statsData.checked} sázek spárovaných s losováním. Četnosti slouží k analýze, nikoliv k zaručení výhry.</p><h3>Kontrola výherních pořadí Extra Renty</h3><div class="renta-fin-audit">${[['Ověřené sloupce',evaluated],['Výherní kombinace',winning],['Bez výsledku',bets.length-evaluated],['Neurčené pořadí (6 shod)',uncertain]].map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('')}</div><h3>Časová kontrola SMART HYBRID</h3><p>Test ${audit.trials} historických tahů bez znalosti budoucích výsledků. Průměr shod: dlouhodobá četnost ${audit.longAvg.toFixed(2)}, posledních 30 tahů ${audit.recentAvg.toFixed(2)}, náhodné očekávání ${audit.randomAvg.toFixed(2)}.</p>`;
+ section.append(freqBlock);
+
  content.textContent=`SMART HYBRID: ${statsData.count} historických tahů, ${statsData.checked} ověřených sázek. Časový test ${audit.trials} tahů bez znalosti budoucích výsledků: dlouhodobá četnost ${audit.longAvg.toFixed(2)}, posledních 30 tahů ${audit.recentAvg.toFixed(2)}, náhodné očekávání ${audit.randomAvg.toFixed(2)} shody. Test četností není důkaz predikční výhody. Výherní pravidla: ${rules.source||'pravidla Extra Renty'}; základ 25 Kč nebo dvojnásobek při 50 Kč. U šesti zásahů je nutné znát dodatkové číslo. Historie renta.csv uchovává jen sedm hlavních čísel.`;
  section.append(content);root.append(section);
 
